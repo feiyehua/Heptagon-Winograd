@@ -131,6 +131,7 @@ void filter_transform(float *__restrict__ packed_filter,
 
   float z0, z1, z2, z3, z4, z5, z6;
 
+  // get U tensor
   for (int64_t idx = 0; idx < collapsed_dim_size; idx++) {
     for (int64_t w = 0; w < fs.w; ++w) {
       z6 = packed_filter_tensor[0][w][idx];
@@ -293,6 +294,7 @@ void filter_packing(float *__restrict__ filter, float *__restrict__ packed_filte
   filter_tensor_t filter_tensor = (filter_tensor_t)filter;
   packed_filter_tensor_t packed_filter_tensor = (packed_filter_tensor_t)packed_filter;
 
+  //get packed filter frome filter tensor
   for (int64_t h = 0; h < fs.h; ++h)
     for (int64_t w = 0; w < fs.w; ++w)
       for (int64_t oc = 0; oc < fs.oc; oc++)
@@ -358,7 +360,9 @@ void sgemm(const int64_t M, const int64_t N, const int64_t K, float *A, float *B
 
   for (int64_t m = 0; m < M; ++m) {
     for (int64_t n = 0; n < N; ++n) {
+      // 矩阵元素置零
       C_tensor[n][m] = 0;
+      // 计算对应元素乘积
       for (int64_t k = 0; k < K; ++k) {
         C_tensor[n][m] += A_tensor[m][k] * B_tensor[n][k];
       }
@@ -376,13 +380,20 @@ void winograd_convolution(
     const int batch_num,
     float *__restrict__ out) {
   /* new vars of shape */
+  //image shape 
   const image_shape_t is = {.bs = batch_num, .ic = input_channel_num, .h = image_height, .w = image_width};
+  // filter shape
   const filter_shape_t fs = {.oc = output_channel_num, .ic = input_channel_num, .h = FLT_H, .w = FLT_W};
+  //output shape
   const out_shape_t os = get_output_shape(is, fs);
+  //tiling info
   const tiling_info_t ti = get_tiling_info(is, os);
+  //U shape
   const U_shape_t us = get_U_shape(fs, ti);
+  //V shape
   const V_shape_t vs = get_V_shape(is, ti);
 
+  //allocate memory
   float *packed_filter = (float *)malloc(sizeof(float) * fs.h * fs.w * fs.oc * fs.ic);
   float *packed_image = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * ti.num_tiles * is.ic);
   float *U = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * us.oc * us.ic);
@@ -390,6 +401,7 @@ void winograd_convolution(
   float *M = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * us.oc * vs.num_tiles);
   float *Y = (float *)malloc(sizeof(float) * ti.tile_out_h * ti.tile_in_w * os.oc * ti.num_tiles);
 
+  //进行两次变换
   filter_packing(filter, packed_filter, fs);
   filter_transform(packed_filter, U, fs, us, us.oc * us.ic);
 
@@ -398,9 +410,12 @@ void winograd_convolution(
 
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
+
+      // 定义出U V M Tensor指针
       typedef float(*U_tensor_t)[ti.tile_in_w][us.oc][us.ic];
       typedef float(*V_tensor_t)[ti.tile_in_w][vs.num_tiles][vs.ic];
       typedef float(*M_tensor_t)[ti.tile_in_w][us.oc][vs.num_tiles];
+      // 每次循环的时候都会定义一遍？
       U_tensor_t U_tensor = (U_tensor_t)U;
       V_tensor_t V_tensor = (V_tensor_t)V;
       M_tensor_t M_tensor = (M_tensor_t)M;
