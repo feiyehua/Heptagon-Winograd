@@ -6,11 +6,12 @@
 
 #include "utils.h"
 
+//get V tensor = BT*d*B
 void image_transform(float *__restrict__ packed_image,
                      float *__restrict__ V,
                      const V_shape_t vs,
                      const tiling_info_t ti,
-                     const int64_t collapsed_dim_size) {
+                     const int64_t collapsed_dim_size) {// coollapsed the tensor for better performance?
   typedef float(*packed_image_tensor_t)[ti.tile_in_w][collapsed_dim_size];
   typedef float(*V_tensor_t)[ti.tile_in_w][collapsed_dim_size];
   packed_image_tensor_t packed_image_tensor = (packed_image_tensor_t)packed_image;
@@ -18,6 +19,21 @@ void image_transform(float *__restrict__ packed_image,
 
   float z0, z1, z2, z3, z4, z5, z6;
 
+
+  /*
+  BT = 
+⎡4  0   -5  0   1  0⎤
+⎢                   ⎥
+⎢0  -4  -4  1   1  0⎥
+⎢                   ⎥
+⎢0  4   -4  -1  1  0⎥
+⎢                   ⎥
+⎢0  -2  -1  2   1  0⎥
+⎢                   ⎥
+⎢0  2   -1  -2  1  0⎥
+⎢                   ⎥
+⎣0  4   0   -5  0  1⎦
+  */
   for (int64_t idx = 0; idx < collapsed_dim_size; idx++) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
       z6 = packed_image_tensor[0][w][idx];
@@ -119,6 +135,7 @@ void image_transform(float *__restrict__ packed_image,
   }
 }
 
+  // get U tensor = G*g*GT
 void filter_transform(float *__restrict__ packed_filter,
                       float *__restrict__ U,
                       const filter_shape_t fs,
@@ -131,9 +148,25 @@ void filter_transform(float *__restrict__ packed_filter,
 
   float z0, z1, z2, z3, z4, z5, z6;
 
-  // get U tensor
+    /*
+  G = 
+⎡1/4     0     0  ⎤
+⎢                 ⎥
+⎢-1/6  -1/6   -1/6⎥
+⎢                 ⎥
+⎢-1/6   1/6   -1/6⎥
+⎢                 ⎥
+⎢1/24  1/12   1/6 ⎥
+⎢                 ⎥
+⎢1/24  -1/12  1/6 ⎥
+⎢                 ⎥
+⎣ 0      0     1  ⎦
+  */
   for (int64_t idx = 0; idx < collapsed_dim_size; idx++) {
+    // parallel computation for each id
     for (int64_t w = 0; w < fs.w; ++w) {
+      // non-sequential memory access
+      // rewrite for better memory access performance
       z6 = packed_filter_tensor[0][w][idx];
 
       z0 = (1.0f / 4.0f) * z6;
@@ -198,9 +231,9 @@ void filter_transform(float *__restrict__ packed_filter,
     }
   }
 }
-
-void output_transform(float *__restrict__ M,
-                      float *__restrict__ Y,
+// Calculate AT*...*A
+void output_transform(float *__restrict__ M,// input tensor
+                      float *__restrict__ Y,// output tensor
                       const tiling_info_t ti,
                       const int64_t collapsed_dim_size) {
   typedef float(*M_tensor_t)[ti.tile_in_w][collapsed_dim_size];
@@ -208,8 +241,17 @@ void output_transform(float *__restrict__ M,
   M_tensor_t M_tensor = (M_tensor_t)M;
   Y_tensor_t Y_tensor = (Y_tensor_t)Y;
   float z0, z1, z2, z3, z4;
-
-  for (int64_t idx = 0; idx < collapsed_dim_size; idx++) {
+/*
+AT = 
+⎡1  1  1   1  1   0⎤
+⎢                  ⎥
+⎢0  1  -1  2  -2  0⎥
+⎢                  ⎥
+⎢0  1  1   4  4   0⎥
+⎢                  ⎥
+⎣0  1  -1  8  -8  1⎦
+*/
+  for (int64_t idx = 0; idx < collapsed_dim_size; idx++) { // processing tiles
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
       z4 = M_tensor[0][w][idx];
       z0 = z4;
@@ -349,7 +391,16 @@ void output_unpacking_store(float *__restrict__ Y,
     }
   }
 }
-
+/*
+AT*((G*g)(BT*d)) =
+⎡d[0]⋅g[0] + d[1]⋅g[1] + d[2]⋅g[2]⎤
+⎢                                 ⎥
+⎢d[1]⋅g[0] + d[2]⋅g[1] + d[3]⋅g[2]⎥
+⎢                                 ⎥
+⎢d[2]⋅g[0] + d[3]⋅g[1] + d[4]⋅g[2]⎥
+⎢                                 ⎥
+⎣d[3]⋅g[0] + d[4]⋅g[1] + d[5]⋅g[2]⎦
+*/
 void sgemm(const int64_t M, const int64_t N, const int64_t K, float *A, float *B, float *C) {
   typedef float(*A_tensor_t)[K];
   typedef float(*B_tensor_t)[K];
@@ -405,6 +456,7 @@ void winograd_convolution(
   filter_packing(filter, packed_filter, fs);
   filter_transform(packed_filter, U, fs, us, us.oc * us.ic);
 
+  // parallel accelerate!
   image_packing(image, packed_image, is, ti);
   image_transform(packed_image, V, vs, ti, vs.ic * vs.num_tiles);
 
