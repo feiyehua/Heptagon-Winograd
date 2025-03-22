@@ -11,7 +11,8 @@ void image_transform(float *__restrict__ packed_image,
                      float *__restrict__ V,
                      const V_shape_t vs,
                      const tiling_info_t ti,
-                     const int64_t collapsed_dim_size) {// coollapsed the tensor for better performance?
+                     const int64_t collapsed_dim_size) {// collapsed the tensor for better performance?
+                      // should transform first, then pack
   typedef float(*packed_image_tensor_t)[ti.tile_in_w][collapsed_dim_size];
   typedef float(*V_tensor_t)[ti.tile_in_w][collapsed_dim_size];
   packed_image_tensor_t packed_image_tensor = (packed_image_tensor_t)packed_image;
@@ -415,6 +416,7 @@ void sgemm(const int64_t M, const int64_t N, const int64_t K, float *A, float *B
       C_tensor[n][m] = 0;
       // 计算对应元素乘积
       for (int64_t k = 0; k < K; ++k) {
+        //packing improves performance here
         C_tensor[n][m] += A_tensor[m][k] * B_tensor[n][k];
       }
     }
