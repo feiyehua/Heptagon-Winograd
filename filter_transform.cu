@@ -2,32 +2,57 @@
 #include "filter_transform.cuh"
 
 __host__ void device_filter_transform(
+    // collapsed_dim_size = us.oc * us.ic = fs.oc * fs.ic
     float *__restrict__ packed_filter,  //  packed_filter collapsed_dim_size*fs.h*fs.w
     float *__restrict__ U,              // collapsed_dim_size*us.h*us.w
     const filter_shape_t fs,
     const U_shape_t us,
     const int64_t collapsed_dim_size) {
-  float *__restrict__ device_packed_filter;
+  float *__restrict__ device_filter;
   float *__restrict__ device_U;
-  cudaMalloc((void **)&device_packed_filter, sizeof(float) * collapsed_dim_size * fs.h * fs.w);
+  float *__restrict__ device_packed_U;
+  cudaMalloc((void **)&device_filter, sizeof(float) * collapsed_dim_size * fs.h * fs.w);
   cudaMalloc((void **)&device_U, sizeof(float) * collapsed_dim_size * us.h * us.w);
-  cudaMemcpy(device_packed_filter,
-             packed_filter,
-             sizeof(float) * collapsed_dim_size * fs.h * fs.w,
-             cudaMemcpyHostToDevice);
-  thread_filter_transform<<<us.oc, us.ic>>>(device_packed_filter, device_U, fs, us, collapsed_dim_size);
+  cudaMalloc((void **)&device_packed_U, sizeof(float) * collapsed_dim_size * us.h * us.w);
+  cudaMemcpy(
+      device_filter, packed_filter, sizeof(float) * collapsed_dim_size * fs.h * fs.w, cudaMemcpyHostToDevice);
+  thread_filter_transform<<<us.oc, us.ic>>>(
+      device_filter, device_U, device_packed_U, fs, us, collapsed_dim_size);
   cudaDeviceSynchronize();
   // auto err = cudaGetLastError();
-  // printf("%d\n", collapsed_dim_size);
   // if (err != cudaSuccess) {
   //   printf("%s\n", cudaGetErrorString(err));
   //   exit(-1);
   // }
-  cudaMemcpy(U, device_U, sizeof(float) * collapsed_dim_size * us.h * us.w, cudaMemcpyDeviceToHost);
+  cudaMemcpy(U, device_packed_U, sizeof(float) * collapsed_dim_size * us.h * us.w, cudaMemcpyDeviceToHost);
+  cudaFree(device_packed_U);
+  cudaFree(device_U);
+  cudaFree(device_filter);
 }
+
+// __device__ void device_filter_packing(float *__restrict__ filter_tensor,
+//                                       float *__restrict__ packed_filter_tensor,
+//                                       const U_shape_t fs) {
+//   // typedef float(*filter_tensor_t)[fs.ic][fs.h][fs.w];
+//   // typedef float(*packed_filter_tensor_t)[fs.w][fs.oc][fs.ic];
+//   // filter_tensor_t filter_tensor = (filter_tensor_t)filter;
+//   // packed_filter_tensor_t packed_filter_tensor = (packed_filter_tensor_t)packed_filter;
+
+//   // get packed filter frome filter tensor
+//   for (int64_t h = 0; h < fs.h; ++h)
+//     for (int64_t w = 0; w < fs.w; ++w)
+// #pragma unroll
+//       for (int64_t oc = 0; oc < fs.oc; oc++)
+// #pragma unroll
+//         for (int64_t ic = 0; ic < fs.ic; ic++)
+//           packed_filter_tensor[h * fs.w * fs.oc * fs.ic + w * fs.oc * fs.ic + oc * fs.ic +
+//                                ic] = filter_tensor[oc * fs.ic * fs.h * fs.w + ic * fs.h * fs.w + h * fs.w +
+//                                                    w];
+// }
 
 __global__ void thread_filter_transform(float *__restrict__ packed_filter,
                                         float *__restrict__ U,
+                                        float *__restrict__ packed_U,
                                         const filter_shape_t fs,
                                         const U_shape_t us,
                                         const int64_t collapsed_dim_size) {
@@ -117,11 +142,17 @@ G =
     z5 = z6;
 
     U[idx * us.h * us.w + h * us.w + 0] = z0;
+    packed_U[h * us.w * collapsed_dim_size + 0 * collapsed_dim_size + blockIdx.x * us.ic + threadIdx.x] = z0;
     U[idx * us.h * us.w + h * us.w + 1] = z1;
+    packed_U[h * us.w * collapsed_dim_size + 1 * collapsed_dim_size + blockIdx.x * us.ic + threadIdx.x] = z1;
     U[idx * us.h * us.w + h * us.w + 2] = z2;
+    packed_U[h * us.w * collapsed_dim_size + 2 * collapsed_dim_size + blockIdx.x * us.ic + threadIdx.x] = z2;
     U[idx * us.h * us.w + h * us.w + 3] = z3;
+    packed_U[h * us.w * collapsed_dim_size + 3 * collapsed_dim_size + blockIdx.x * us.ic + threadIdx.x] = z3;
     U[idx * us.h * us.w + h * us.w + 4] = z4;
+    packed_U[h * us.w * collapsed_dim_size + 4 * collapsed_dim_size + blockIdx.x * us.ic + threadIdx.x] = z4;
     U[idx * us.h * us.w + h * us.w + 5] = z5;
+    packed_U[h * us.w * collapsed_dim_size + 5 * collapsed_dim_size + blockIdx.x * us.ic + threadIdx.x] = z5;
   }
   // }
 }

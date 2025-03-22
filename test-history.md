@@ -87,3 +87,21 @@ Layer 14:  Elapse time 7744.733731 ms. (    5.61 GFlops)
 Layer 15:  Elapse time 7744.950692 ms. (    5.61 GFlops) 
 Total elapse time: 401.178605. (    5.60 GFlops) 
 `
+
+
+### 进行简单的性能分析：
+```
+Filter took 0 milliseconds to execute.
+Image took 573 milliseconds to execute.
+Sgemm took 2877 milliseconds to execute.
+Output took 11678 milliseconds to execute.
+Filter took 0 milliseconds to execute.
+Image took 544 milliseconds to execute.
+Sgemm took 2874 milliseconds to execute.
+Output took 11021 milliseconds to execute.
+Filter took 0 milliseconds to execute.
+Image took 546 milliseconds to execute.
+Sgemm took 2875 milliseconds to execute.
+Output took 10698 milliseconds to execute.
+Layer 0 :  Elapse time 14775.998036 ms. (    0.74 GFlops) 
+```

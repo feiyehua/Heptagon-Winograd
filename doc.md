@@ -6,7 +6,7 @@
 ## spack
 在集群上使用spack：
 `source /data/spack/share/spack/setup-env.sh`
-
+`spack env activate -p winograd`
 ### 使用了的spack包
 
 

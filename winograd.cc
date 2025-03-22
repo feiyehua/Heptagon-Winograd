@@ -456,14 +456,14 @@ void winograd_convolution(
   float *Y = (float *)malloc(sizeof(float) * ti.tile_out_h * ti.tile_in_w * os.oc * ti.num_tiles);
 
   //进行两次变换
-  device_filter_transform(filter, transformed_filter, fs, us, us.oc * us.ic);
+  device_filter_transform(filter, U, fs, us, us.oc * us.ic);
   // filter_transform(filter, transformed_filter, fs, us, us.oc * us.ic);
-  filter_packing(transformed_filter, U, us);
+  // filter_packing(transformed_filter, U, us);
 
   // parallel accelerate!
   image_packing(image, packed_image, is, ti);
   image_transform(packed_image, V, vs, ti, vs.ic * vs.num_tiles);
-
+  // ti.tile_in_h = ti.tile_in_w = 6
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
       // 定义出U V M Tensor指针
@@ -474,6 +474,7 @@ void winograd_convolution(
       U_tensor_t U_tensor = (U_tensor_t)U;
       V_tensor_t V_tensor = (V_tensor_t)V;
       M_tensor_t M_tensor = (M_tensor_t)M;
+      // 90ms
       sgemm(vs.num_tiles,
             us.oc,
             us.ic,
