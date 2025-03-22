@@ -15,15 +15,14 @@ __host__ void device_filter_transform(
              packed_filter,
              sizeof(float) * collapsed_dim_size * fs.h * fs.w,
              cudaMemcpyHostToDevice);
-  thread_filter_transform<<<1, collapsed_dim_size>>>(
-      device_packed_filter, device_U, fs, us, collapsed_dim_size);
+  thread_filter_transform<<<us.oc, us.ic>>>(device_packed_filter, device_U, fs, us, collapsed_dim_size);
   cudaDeviceSynchronize();
-  auto err = cudaGetLastError();
-  printf("%d\n", collapsed_dim_size);
-  if (err != cudaSuccess) {
-    printf("%s\n", cudaGetErrorString(err));
-    exit(-1);
-  }
+  // auto err = cudaGetLastError();
+  // printf("%d\n", collapsed_dim_size);
+  // if (err != cudaSuccess) {
+  //   printf("%s\n", cudaGetErrorString(err));
+  //   exit(-1);
+  // }
   cudaMemcpy(U, device_U, sizeof(float) * collapsed_dim_size * us.h * us.w, cudaMemcpyDeviceToHost);
 }
 
@@ -54,8 +53,10 @@ G =
 ⎣ 0      0     1  ⎦
 */
   // for (int64_t idx = 0; idx < collapsed_dim_size; idx++) {
-  int64_t idx = threadIdx.x;
-  // parallel computation for each id
+  int64_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+// parallel computation for each id
+#pragma unroll
+  // fs.w=3
   for (int64_t w = 0; w < fs.w; ++w) {
     // non-sequential memory access
     // rewrite for better memory access performance
@@ -89,7 +90,8 @@ G =
     U[idx * us.h * us.w + 4 * us.w + w] = z4;
     U[idx * us.h * us.w + 5 * us.w + w] = z5;
   }
-
+#pragma unroll
+  // us.h=6
   for (int64_t h = 0; h < us.h; ++h) {
     z6 = U[idx * us.h * us.w + h * us.w + 0];
 

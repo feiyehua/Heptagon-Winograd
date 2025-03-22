@@ -1,4 +1,4 @@
-CFLAG = -O3 -g 
+CFLAG = -O4 -g 
 
 all:
 	nvcc driver.cc winograd.cc filter_transform.cu -std=c++11 ${CFLAG} -o winograd

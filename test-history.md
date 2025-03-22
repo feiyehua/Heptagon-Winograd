@@ -58,3 +58,32 @@ Layer 14:  Elapse time 7748.624007 ms. (    5.61 GFlops)
 Layer 15:  Elapse time 7748.088360 ms. (    5.61 GFlops) 
 Total elapse time: 400.305413. (    5.61 GFlops) 
 `
+
+### 2 将 filte_transform 转移到GPU上计算的结果
+`
+Layer 0 :  Elapse time 47.079961 ms. (    0.00 GFlops) 
+Layer 1 :  Elapse time 0.056267 ms. (    1.23 GFlops) 
+Layer 2 :  Elapse time 0.855605 ms. (    2.91 GFlops) 
+Layer 3 :  Elapse time 24.053971 ms. (    7.06 GFlops) 
+Layer 4 :  Elapse time 816.472689 ms. (    6.66 GFlops) 
+Total elapse time: 0.888518. (    6.31 GFlops) 
+`
+`
+Layer 0 :  Elapse time 7679.061333 ms. (    1.42 GFlops) 
+Layer 1 :  Elapse time 36590.525309 ms. (    6.36 GFlops) 
+Layer 2 :  Elapse time 16455.760956 ms. (    6.94 GFlops) 
+Layer 3 :  Elapse time 34384.700378 ms. (    6.64 GFlops) 
+Layer 4 :  Elapse time 16276.542346 ms. (    6.76 GFlops) 
+Layer 5 :  Elapse time 38111.253977 ms. (    5.78 GFlops) 
+Layer 6 :  Elapse time 38132.897695 ms. (    5.77 GFlops) 
+Layer 7 :  Elapse time 38130.178690 ms. (    5.77 GFlops) 
+Layer 8 :  Elapse time 18568.888664 ms. (    5.50 GFlops) 
+Layer 9 :  Elapse time 41950.209697 ms. (    4.87 GFlops) 
+Layer 10:  Elapse time 41962.100347 ms. (    4.86 GFlops) 
+Layer 11:  Elapse time 41949.927012 ms. (    4.87 GFlops) 
+Layer 12:  Elapse time 7754.538377 ms. (    5.61 GFlops) 
+Layer 13:  Elapse time 7742.335717 ms. (    5.62 GFlops) 
+Layer 14:  Elapse time 7744.733731 ms. (    5.61 GFlops) 
+Layer 15:  Elapse time 7744.950692 ms. (    5.61 GFlops) 
+Total elapse time: 401.178605. (    5.60 GFlops) 
+`
