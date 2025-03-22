@@ -1,7 +1,7 @@
-CFLAG = -O3 -g -Wall -fopenmp
+CFLAG = -O3 -g 
 
 all:
-	g++ driver.cc winograd.cc -std=c++11 ${CFLAG} -o winograd
+	nvcc driver.cc winograd.cc filter_transform.cu -std=c++11 ${CFLAG} -o winograd
 
 clean:
 	rm -f winograd

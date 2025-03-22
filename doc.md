@@ -1,4 +1,8 @@
 # 
+## slurm 集群管理
+
+通过`scontrol show node`可以看到集群拥有的GPU资源，受限于相关要求不在此直接粘贴。
+
 ## spack
 在集群上使用spack：
 `source /data/spack/share/spack/setup-env.sh`

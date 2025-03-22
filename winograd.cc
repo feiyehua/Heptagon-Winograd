@@ -4,15 +4,15 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "filter_transform.cuh"
 #include "utils.h"
-
-//get V tensor = BT*d*B
+// get V tensor = BT*d*B
 void image_transform(float *__restrict__ packed_image,
                      float *__restrict__ V,
                      const V_shape_t vs,
                      const tiling_info_t ti,
-                     const int64_t collapsed_dim_size) {// collapsed the tensor for better performance?
-                      // should transform first, then pack
+                     const int64_t collapsed_dim_size) {  // collapsed the tensor for better performance?
+                                                          // should transform first, then pack
   typedef float(*packed_image_tensor_t)[ti.tile_in_w][collapsed_dim_size];
   typedef float(*V_tensor_t)[ti.tile_in_w][collapsed_dim_size];
   packed_image_tensor_t packed_image_tensor = (packed_image_tensor_t)packed_image;
@@ -20,9 +20,8 @@ void image_transform(float *__restrict__ packed_image,
 
   float z0, z1, z2, z3, z4, z5, z6;
 
-
   /*
-  BT = 
+  BT =
 ⎡4  0   -5  0   1  0⎤
 ⎢                   ⎥
 ⎢0  -4  -4  1   1  0⎥
@@ -136,7 +135,7 @@ void image_transform(float *__restrict__ packed_image,
   }
 }
 
-  // get U tensor = G*g*GT
+// get U tensor = G*g*GT
 void filter_transform(float *__restrict__ packed_filter,
                       float *__restrict__ U,
                       const filter_shape_t fs,
@@ -149,8 +148,8 @@ void filter_transform(float *__restrict__ packed_filter,
 
   float z0, z1, z2, z3, z4, z5, z6;
 
-    /*
-  G = 
+  /*
+G =
 ⎡1/4     0     0  ⎤
 ⎢                 ⎥
 ⎢-1/6  -1/6   -1/6⎥
@@ -162,7 +161,7 @@ void filter_transform(float *__restrict__ packed_filter,
 ⎢1/24  -1/12  1/6 ⎥
 ⎢                 ⎥
 ⎣ 0      0     1  ⎦
-  */
+*/
   for (int64_t idx = 0; idx < collapsed_dim_size; idx++) {
     // parallel computation for each id
     for (int64_t w = 0; w < fs.w; ++w) {
@@ -233,8 +232,8 @@ void filter_transform(float *__restrict__ packed_filter,
   }
 }
 // Calculate AT*...*A
-void output_transform(float *__restrict__ M,// input tensor
-                      float *__restrict__ Y,// output tensor
+void output_transform(float *__restrict__ M,  // input tensor
+                      float *__restrict__ Y,  // output tensor
                       const tiling_info_t ti,
                       const int64_t collapsed_dim_size) {
   typedef float(*M_tensor_t)[ti.tile_in_w][collapsed_dim_size];
@@ -242,17 +241,17 @@ void output_transform(float *__restrict__ M,// input tensor
   M_tensor_t M_tensor = (M_tensor_t)M;
   Y_tensor_t Y_tensor = (Y_tensor_t)Y;
   float z0, z1, z2, z3, z4;
-/*
-AT = 
-⎡1  1  1   1  1   0⎤
-⎢                  ⎥
-⎢0  1  -1  2  -2  0⎥
-⎢                  ⎥
-⎢0  1  1   4  4   0⎥
-⎢                  ⎥
-⎣0  1  -1  8  -8  1⎦
-*/
-  for (int64_t idx = 0; idx < collapsed_dim_size; idx++) { // processing tiles
+  /*
+  AT =
+  ⎡1  1  1   1  1   0⎤
+  ⎢                  ⎥
+  ⎢0  1  -1  2  -2  0⎥
+  ⎢                  ⎥
+  ⎢0  1  1   4  4   0⎥
+  ⎢                  ⎥
+  ⎣0  1  -1  8  -8  1⎦
+  */
+  for (int64_t idx = 0; idx < collapsed_dim_size; idx++) {  // processing tiles
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
       z4 = M_tensor[0][w][idx];
       z0 = z4;
@@ -337,7 +336,7 @@ void filter_packing(float *__restrict__ filter, float *__restrict__ packed_filte
   filter_tensor_t filter_tensor = (filter_tensor_t)filter;
   packed_filter_tensor_t packed_filter_tensor = (packed_filter_tensor_t)packed_filter;
 
-  //get packed filter frome filter tensor
+  // get packed filter frome filter tensor
   for (int64_t h = 0; h < fs.h; ++h)
     for (int64_t w = 0; w < fs.w; ++w)
       for (int64_t oc = 0; oc < fs.oc; oc++)
@@ -417,7 +416,7 @@ void sgemm(const int64_t M, const int64_t N, const int64_t K, float *A, float *B
       C_tensor[n][m] = 0;
       // 计算对应元素乘积
       for (int64_t k = 0; k < K; ++k) {
-        //packing improves performance here
+        // packing improves performance here
         C_tensor[n][m] += A_tensor[m][k] * B_tensor[n][k];
       }
     }
@@ -434,21 +433,21 @@ void winograd_convolution(
     const int batch_num,
     float *__restrict__ out) {
   /* new vars of shape */
-  //image shape 
+  // image shape
   const image_shape_t is = {.bs = batch_num, .ic = input_channel_num, .h = image_height, .w = image_width};
   // filter shape
   const filter_shape_t fs = {.oc = output_channel_num, .ic = input_channel_num, .h = FLT_H, .w = FLT_W};
-  //output shape
+  // output shape
   const out_shape_t os = get_output_shape(is, fs);
-  //tiling info
+  // tiling info
   const tiling_info_t ti = get_tiling_info(is, os);
-  //U shape
+  // U shape
   const U_shape_t us = get_U_shape(fs, ti);
-  //V shape
+  // V shape
   const V_shape_t vs = get_V_shape(is, ti);
 
-  //allocate memory
-  // float *packed_filter = (float *)malloc(sizeof(float) * fs.h * fs.w * fs.oc * fs.ic);
+  // allocate memory
+  //  float *packed_filter = (float *)malloc(sizeof(float) * fs.h * fs.w * fs.oc * fs.ic);
   float *packed_image = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * ti.num_tiles * is.ic);
   float *U = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * us.oc * us.ic);
   float *transformed_filter = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * us.oc * us.ic);
@@ -457,7 +456,8 @@ void winograd_convolution(
   float *Y = (float *)malloc(sizeof(float) * ti.tile_out_h * ti.tile_in_w * os.oc * ti.num_tiles);
 
   //进行两次变换
-  filter_transform(filter, transformed_filter, fs, us, us.oc * us.ic);
+  device_filter_transform(filter, transformed_filter, fs, us, us.oc * us.ic);
+  // filter_transform(filter, transformed_filter, fs, us, us.oc * us.ic);
   filter_packing(transformed_filter, U, us);
 
   // parallel accelerate!
@@ -466,7 +466,6 @@ void winograd_convolution(
 
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
-
       // 定义出U V M Tensor指针
       typedef float(*U_tensor_t)[ti.tile_in_w][us.oc][us.ic];
       typedef float(*V_tensor_t)[ti.tile_in_w][vs.num_tiles][vs.ic];
