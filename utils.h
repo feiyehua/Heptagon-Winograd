@@ -102,6 +102,7 @@ inline out_shape_t get_output_shape(image_shape_t is, filter_shape_t fs) {
   os.oc = fs.oc;
   os.h = is.h - fs.h + 1;
   os.w = is.w - fs.w + 1;
+  // printf("%d %d \n",os.h,os.w);
   return os;
 }
 

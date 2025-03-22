@@ -142,8 +142,8 @@ void filter_transform(float *__restrict__ packed_filter,
                       const filter_shape_t fs,
                       const U_shape_t us,
                       const int64_t collapsed_dim_size) {
-  typedef float(*packed_filter_tensor_t)[fs.w][collapsed_dim_size];
-  typedef float(*U_tensor_t)[us.w][collapsed_dim_size];
+  typedef float(*packed_filter_tensor_t)[fs.h][fs.w];
+  typedef float(*U_tensor_t)[us.h][us.w];
   packed_filter_tensor_t packed_filter_tensor = (packed_filter_tensor_t)packed_filter;
   U_tensor_t U_tensor = (U_tensor_t)U;
 
@@ -168,7 +168,7 @@ void filter_transform(float *__restrict__ packed_filter,
     for (int64_t w = 0; w < fs.w; ++w) {
       // non-sequential memory access
       // rewrite for better memory access performance
-      z6 = packed_filter_tensor[0][w][idx];
+      z6 = packed_filter_tensor[idx][0][w];
 
       z0 = (1.0f / 4.0f) * z6;
       z1 = (-1.0f / 6.0f) * z6;
@@ -176,14 +176,14 @@ void filter_transform(float *__restrict__ packed_filter,
       z3 = (1.0f / 24.0f) * z6;
       z4 = (1.0f / 24.0f) * z6;
 
-      z6 = packed_filter_tensor[1][w][idx];
+      z6 = packed_filter_tensor[idx][1][w];
 
       z1 += (-1.0f / 6.0f) * z6;
       z2 += (1.0f / 6.0f) * z6;
       z3 += (1.0f / 12.0f) * z6;
       z4 += (-1.0f / 12.0f) * z6;
 
-      z6 = packed_filter_tensor[2][w][idx];
+      z6 = packed_filter_tensor[idx][2][w];
 
       z1 += (-1.0f / 6.0f) * z6;
       z2 += (-1.0f / 6.0f) * z6;
@@ -191,16 +191,16 @@ void filter_transform(float *__restrict__ packed_filter,
       z4 += (1.0f / 6.0f) * z6;
       z5 = z6;
 
-      U_tensor[0][w][idx] = z0;
-      U_tensor[1][w][idx] = z1;
-      U_tensor[2][w][idx] = z2;
-      U_tensor[3][w][idx] = z3;
-      U_tensor[4][w][idx] = z4;
-      U_tensor[5][w][idx] = z5;
+      U_tensor[idx][0][w] = z0;
+      U_tensor[idx][1][w] = z1;
+      U_tensor[idx][2][w] = z2;
+      U_tensor[idx][3][w] = z3;
+      U_tensor[idx][4][w] = z4;
+      U_tensor[idx][5][w] = z5;
     }
 
     for (int64_t h = 0; h < us.h; ++h) {
-      z6 = U_tensor[h][0][idx];
+      z6 = U_tensor[idx][h][0];
 
       z0 = (1.0f / 4.0f) * z6;
       z1 = (-1.0f / 6.0f) * z6;
@@ -208,14 +208,14 @@ void filter_transform(float *__restrict__ packed_filter,
       z3 = (1.0f / 24.0f) * z6;
       z4 = (1.0f / 24.0f) * z6;
 
-      z6 = U_tensor[h][1][idx];
+      z6 = U_tensor[idx][h][1];
 
       z1 += (-1.0f / 6.0f) * z6;
       z2 += (1.0f / 6.0f) * z6;
       z3 += (1.0f / 12.0f) * z6;
       z4 += (-1.0f / 12.0f) * z6;
 
-      z6 = U_tensor[h][2][idx];
+      z6 = U_tensor[idx][h][2];
 
       z1 += (-1.0f / 6.0f) * z6;
       z2 += (-1.0f / 6.0f) * z6;
@@ -223,12 +223,12 @@ void filter_transform(float *__restrict__ packed_filter,
       z4 += (1.0f / 6.0f) * z6;
       z5 = z6;
 
-      U_tensor[h][0][idx] = z0;
-      U_tensor[h][1][idx] = z1;
-      U_tensor[h][2][idx] = z2;
-      U_tensor[h][3][idx] = z3;
-      U_tensor[h][4][idx] = z4;
-      U_tensor[h][5][idx] = z5;
+      U_tensor[idx][h][0] = z0;
+      U_tensor[idx][h][1] = z1;
+      U_tensor[idx][h][2] = z2;
+      U_tensor[idx][h][3] = z3;
+      U_tensor[idx][h][4] = z4;
+      U_tensor[idx][h][5] = z5;
     }
   }
 }
@@ -331,7 +331,7 @@ AT =
   }
 }
 
-void filter_packing(float *__restrict__ filter, float *__restrict__ packed_filter, const filter_shape_t fs) {
+void filter_packing(float *__restrict__ filter, float *__restrict__ packed_filter, const U_shape_t fs) {
   typedef float(*filter_tensor_t)[fs.ic][fs.h][fs.w];
   typedef float(*packed_filter_tensor_t)[fs.w][fs.oc][fs.ic];
   filter_tensor_t filter_tensor = (filter_tensor_t)filter;
@@ -360,6 +360,7 @@ void image_packing(float *__restrict__ image,
         for (int64_t w = 0; w < ti.tile_in_w; ++w) {
           tile_index_t tidx = get_tile_index(tile, ti);
           int64_t batch = tidx.b, ww = tidx.tw, hh = tidx.th;
+          // Something to be done here
           if (hh * 4 + h < is.h && ww * 4 + w < is.w)
             packed_image_tensor[h][w][tile][ic] = image_tensor[batch][ic][(hh * 4 + h)][(ww * 4 + w)];
           else
@@ -447,16 +448,17 @@ void winograd_convolution(
   const V_shape_t vs = get_V_shape(is, ti);
 
   //allocate memory
-  float *packed_filter = (float *)malloc(sizeof(float) * fs.h * fs.w * fs.oc * fs.ic);
+  // float *packed_filter = (float *)malloc(sizeof(float) * fs.h * fs.w * fs.oc * fs.ic);
   float *packed_image = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * ti.num_tiles * is.ic);
   float *U = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * us.oc * us.ic);
+  float *transformed_filter = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * us.oc * us.ic);
   float *V = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * vs.num_tiles * vs.ic);
   float *M = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * us.oc * vs.num_tiles);
   float *Y = (float *)malloc(sizeof(float) * ti.tile_out_h * ti.tile_in_w * os.oc * ti.num_tiles);
 
   //进行两次变换
-  filter_packing(filter, packed_filter, fs);
-  filter_transform(packed_filter, U, fs, us, us.oc * us.ic);
+  filter_transform(filter, transformed_filter, fs, us, us.oc * us.ic);
+  filter_packing(transformed_filter, U, us);
 
   // parallel accelerate!
   image_packing(image, packed_image, is, ti);
@@ -469,7 +471,7 @@ void winograd_convolution(
       typedef float(*U_tensor_t)[ti.tile_in_w][us.oc][us.ic];
       typedef float(*V_tensor_t)[ti.tile_in_w][vs.num_tiles][vs.ic];
       typedef float(*M_tensor_t)[ti.tile_in_w][us.oc][vs.num_tiles];
-      // 每次循环的时候都会定义一遍？
+      // 每次循环的时候都会定义一遍？不过估计会被编译器优化掉
       U_tensor_t U_tensor = (U_tensor_t)U;
       V_tensor_t V_tensor = (V_tensor_t)V;
       M_tensor_t M_tensor = (M_tensor_t)M;
@@ -485,8 +487,9 @@ void winograd_convolution(
   output_transform(M, Y, ti, us.oc * vs.num_tiles);
   output_unpacking_store(Y, out, os, ti);
 
-  free(packed_filter);
+  // free(packed_filter);
   free(packed_image);
+  free(transformed_filter);
   free(U);
   free(V);
   free(M);
