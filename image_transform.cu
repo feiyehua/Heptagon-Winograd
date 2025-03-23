@@ -23,9 +23,12 @@ __global__ void image_packing(const cudaPitchedPtr device_image,
   float *device_image_tensor = (float *)device_image.ptr;
   float *device_packed_image_tensor = (float *)device_packed_image.ptr;
 
-  int64_t tile = blockIdx.x;
-  int64_t ic = threadIdx.x;
-  int64_t x_index = (tile * blockDim.x + ic);
+  int64_t x_index = (blockIdx.x * blockDim.x + threadIdx.x);
+  int64_t tile = x_index / is.ic;
+  int64_t ic = x_index % is.ic;
+  if (tile >= ti.num_tiles) {
+    return;
+  }
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
       tile_index_t tidx = device_get_tile_index(tile, ti);
@@ -37,7 +40,7 @@ __global__ void image_packing(const cudaPitchedPtr device_image,
                                      sizeof(float) +
                                  h * device_packed_image.pitch / sizeof(float) + w]
 
-          = device_image_tensor[(batch * blockDim.x + ic) * device_image.ysize * device_image.pitch /
+          = device_image_tensor[(batch * is.ic + ic) * device_image.ysize * device_image.pitch /
                                     sizeof(float) +
                                 (hh * 4 + h) * device_image.pitch / sizeof(float) + (ww * 4 + w)];
     }
@@ -62,6 +65,7 @@ __global__ void image_transform(const cudaPitchedPtr device_packed_image,
 
   int64_t idx = (blockIdx.x * blockDim.x + threadIdx.x);
   int64_t x_index = (blockIdx.x * blockDim.x + threadIdx.x);
+  if (idx >= collapsed_dim_size) return;
 
   int64_t device_packed_image_yz = device_packed_image.ysize * device_packed_image.pitch / sizeof(float);
   int64_t device_packed_image_z = device_packed_image.pitch / sizeof(float);
@@ -216,7 +220,8 @@ void device_image_transform(float *__restrict__ image,
   cudaExtent device_packed_image_extent = make_cudaExtent(
       sizeof(float) * ti.tile_in_w, ti.tile_in_h, ti.num_tiles * is.ic);
   cudaError_t err = cudaMalloc3D(&device_packed_image, device_packed_image_extent);
-  image_packing<<<ti.num_tiles, is.ic>>>(device_image, device_packed_image, is, ti);
+  printf("%d %d\n", ti.num_tiles, is.ic);
+  image_packing<<<DIV_UP(ti.num_tiles * is.ic, 1024), 1024>>>(device_image, device_packed_image, is, ti);
   cudaDeviceSynchronize();
   cudaFree(device_image.ptr);
 
@@ -224,7 +229,7 @@ void device_image_transform(float *__restrict__ image,
       sizeof(float) * vs.ic * vs.num_tiles, ti.tile_in_w, ti.tile_in_h);
   cudaPitchedPtr device_V_tensor;
   cudaMalloc3D(&device_V_tensor, V_tensor_extent);
-  image_transform<<<vs.num_tiles, vs.ic>>>(
+  image_transform<<<DIV_UP(vs.num_tiles * vs.ic, 1024), 1024>>>(
       device_packed_image, device_V_tensor, vs, ti, vs.ic * vs.num_tiles);
   cudaDeviceSynchronize();
   cudaFree(device_packed_image.ptr);
@@ -238,6 +243,7 @@ void device_image_transform(float *__restrict__ image,
   device_V_copy_parms.kind = cudaMemcpyDeviceToHost;
   cudaMemcpy3D(&device_V_copy_parms);
   cudaFree(device_V_tensor.ptr);
-  // err=cudaGetLastError();
-  // printf("%s\n",cudaGetErrorString(err));
+  err = cudaGetLastError();
+  printf("%s\n", cudaGetErrorString(err));
+  if (err != cudaSuccess) exit(-1);
 }
