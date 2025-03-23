@@ -1,4 +1,4 @@
-CFLAG = -O0 -g
+CFLAG = -O4 -g
 
 BUILD_DIR = build
 
