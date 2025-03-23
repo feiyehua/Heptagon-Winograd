@@ -88,6 +88,16 @@ Layer 15:  Elapse time 7744.950692 ms. (    5.61 GFlops)
 Total elapse time: 401.178605. (    5.60 GFlops) 
 `
 
+### 3 将imag_transform转移到GPU上计算的结果
+`
+Layer 0 :  Elapse time 38.395007 ms. (    0.00 GFlops) 
+Layer 1 :  Elapse time 0.175317 ms. (    0.39 GFlops) 
+Layer 2 :  Elapse time 1.137018 ms. (    2.19 GFlops) 
+Layer 3 :  Elapse time 24.143060 ms. (    7.04 GFlops) 
+Layer 4 :  Elapse time 828.822374 ms. (    6.56 GFlops) 
+Total elapse time: 0.892673. (    6.28 GFlops) 
+`
+
 
 ### 进行简单的性能分析：
 ```

@@ -23,3 +23,17 @@ for (int64_t idx = 0; idx < collapsed_dim_size; idx++) {
 }
 ```
 每次计算时，先逐`ti.tile_in_w`
+
+## cudaMalloc3D
+```
+int main()
+{
+    cudaPitchedPtr pitchedDevPtr;
+    cudaExtent extent=make_cudaExtent(3,13,47);
+    cudaMalloc3D(&pitchedDevPtr,extent);
+    printf("%ld %ld %ld\n",pitchedDevPtr.pitch,pitchedDevPtr.xsize,pitchedDevPtr.ysize);
+}
+```
+`512 3 13`
+
+结论：cudaExtent中，width对应x，height对应y，depth对应z，且z会被填充以实现内存对齐。

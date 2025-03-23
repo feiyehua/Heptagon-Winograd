@@ -138,6 +138,7 @@ inline V_shape_t get_V_shape(image_shape_t is, tiling_info_t ti) {
   return vs;
 }
 
+// 计算某个tile对应的横纵坐标
 inline tile_index_t get_tile_index(int64_t tile, tiling_info_t ts) {
   tile_index_t ti;
   ti.b = tile / ts.num_tile_per_image;

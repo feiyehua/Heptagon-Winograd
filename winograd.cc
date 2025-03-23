@@ -6,13 +6,16 @@
 
 #include "filter_transform.cuh"
 #include "utils.h"
+#include "image_transform.cuh"
 // get V tensor = BT*d*B
 void image_transform(float *__restrict__ packed_image,
                      float *__restrict__ V,
                      const V_shape_t vs,
                      const tiling_info_t ti,
-                     const int64_t collapsed_dim_size) {  // collapsed the tensor for better performance?
-                                                          // should transform first, then pack
+                     const int64_t collapsed_dim_size) {
+  // collapsed_dim_size = vs.ic * vs.num_tiles
+  // collapsed the tensor for better performance?
+  // should transform first, then pack
   typedef float(*packed_image_tensor_t)[ti.tile_in_w][collapsed_dim_size];
   typedef float(*V_tensor_t)[ti.tile_in_w][collapsed_dim_size];
   packed_image_tensor_t packed_image_tensor = (packed_image_tensor_t)packed_image;
@@ -35,6 +38,7 @@ void image_transform(float *__restrict__ packed_image,
 ⎣0  4   0   -5  0  1⎦
   */
   for (int64_t idx = 0; idx < collapsed_dim_size; idx++) {
+    // ti.tile_in_w = 6
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
       z6 = packed_image_tensor[0][w][idx];
 
@@ -83,7 +87,7 @@ void image_transform(float *__restrict__ packed_image,
       V_tensor[4][w][idx] = z4;
       V_tensor[5][w][idx] = z5;
     }
-
+    // ti.tile_in_h = 6
     for (int64_t h = 0; h < ti.tile_in_h; ++h) {
       z6 = V_tensor[h][0][idx];
 
@@ -353,6 +357,7 @@ void image_packing(float *__restrict__ image,
   packedImage_tensor_t packed_image_tensor = (packedImage_tensor_t)packed_image;
   image_tensor_t image_tensor = (image_tensor_t)image;
 
+  // batch个image，每个image有ts.num_tile_per_image个tiles，对每个tiles求卷积
   for (int64_t tile = 0; tile < ti.num_tiles; tile++) {
     for (int64_t ic = 0; ic < is.ic; ic++) {
       for (int64_t h = 0; h < ti.tile_in_h; ++h) {
@@ -360,6 +365,8 @@ void image_packing(float *__restrict__ image,
           tile_index_t tidx = get_tile_index(tile, ti);
           int64_t batch = tidx.b, ww = tidx.tw, hh = tidx.th;
           // Something to be done here
+          // 即：tiling size 为4*4，防止数组越界；超出范围的用0填充
+          // image数组已经给出来了，似乎是无法通过一些小trick去掉分支？ 
           if (hh * 4 + h < is.h && ww * 4 + w < is.w)
             packed_image_tensor[h][w][tile][ic] = image_tensor[batch][ic][(hh * 4 + h)][(ww * 4 + w)];
           else
@@ -444,6 +451,8 @@ void winograd_convolution(
   // U shape
   const U_shape_t us = get_U_shape(fs, ti);
   // V shape
+  // vs.ic=is.ic=input_channel_num
+  // vs.num_tiles=ts.num_tiles =  DIV_UP(os.h, 4) * DIV_UP(os.w, 4) * batch_num;
   const V_shape_t vs = get_V_shape(is, ti);
 
   // allocate memory
@@ -461,8 +470,11 @@ void winograd_convolution(
   // filter_packing(transformed_filter, U, us);
 
   // parallel accelerate!
-  image_packing(image, packed_image, is, ti);
-  image_transform(packed_image, V, vs, ti, vs.ic * vs.num_tiles);
+  // 150ms
+  // image_packing(image, packed_image, is, ti);
+  device_image_transform(image, V, is, ti,vs);
+  // 425ms
+  // image_transform(packed_image, V, vs, ti, vs.ic * vs.num_tiles);
   // ti.tile_in_h = ti.tile_in_w = 6
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
@@ -483,8 +495,9 @@ void winograd_convolution(
             (float *)(M_tensor[h][w]));
     }
   }
-
+  // 6000ms
   output_transform(M, Y, ti, us.oc * vs.num_tiles);
+  // 5000ms
   output_unpacking_store(Y, out, os, ti);
 
   // free(packed_filter);
