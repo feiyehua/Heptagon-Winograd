@@ -125,6 +125,17 @@ Layer 14:  Elapse time 7603.749355 ms. (    5.72 GFlops)
 Layer 15:  Elapse time 7604.112387 ms. (    5.72 GFlops) 
 Total elapse time: 387.629164. (    5.79 GFlops) 
 `
+
+### 4 将部分CPU上运算并行
+`
+Layer 0 :  Elapse time 58.452686 ms. (    0.00 GFlops) 
+Layer 1 :  Elapse time 1.946052 ms. (    0.04 GFlops) 
+Layer 2 :  Elapse time 1.523336 ms. (    1.63 GFlops) 
+Layer 3 :  Elapse time 21.313349 ms. (    7.97 GFlops) 
+Layer 4 :  Elapse time 729.779005 ms. (    7.45 GFlops) 
+Total elapse time: 0.813014. (    6.90 GFlops) 
+`
+
 ### 进行简单的性能分析：
 ```
 Filter took 0 milliseconds to execute.

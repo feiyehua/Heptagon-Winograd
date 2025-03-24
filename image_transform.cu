@@ -236,7 +236,4 @@ void device_image_transform(float *__restrict__ packed_image,
   device_V_copy_parms.kind = cudaMemcpyDeviceToHost;
   cudaMemcpy3D(&device_V_copy_parms);
   cudaFree(device_V_tensor.ptr);
-  err = cudaGetLastError();
-  printf("%s\n", cudaGetErrorString(err));
-  if (err != cudaSuccess) exit(-1);
 }
