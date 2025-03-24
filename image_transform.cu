@@ -192,39 +192,30 @@ __global__ void image_transform(const cudaPitchedPtr device_packed_image,
   }
 }
 
-void device_image_transform(float *__restrict__ image,
+void device_image_transform(float *__restrict__ packed_image,
                             float *__restrict__ V,
                             const image_shape_t is,
                             const tiling_info_t ti,
                             const V_shape_t vs) {
-  // float *__restrict__ device_image;
-  cudaPitchedPtr device_image;
-  cudaExtent extent = make_cudaExtent(sizeof(float) * ti.tiles_on_w * ti.tile_in_w,
-                                      ti.tiles_on_h * ti.tile_in_h,
-                                      is.bs * is.ic);  // 分配足够的内存，去掉image_packing中的分支
-  cudaMalloc3D(&device_image, extent);
-  cudaExtent image_extent = make_cudaExtent(sizeof(float) * is.w, is.h, is.bs * is.ic);
-  cudaMemcpy3DParms device_image_copy_parms = {0};
-  device_image_copy_parms.srcPtr.ptr = image;
-  device_image_copy_parms.srcPtr.xsize = is.bs * is.ic;
-  device_image_copy_parms.srcPtr.ysize = is.h;
-  device_image_copy_parms.srcPtr.pitch = is.w * sizeof(float);
-  device_image_copy_parms.dstPtr = device_image;
-  device_image_copy_parms.extent = image_extent;
-  device_image_copy_parms.kind = cudaMemcpyHostToDevice;
-  cudaMemcpy3D(&device_image_copy_parms);
-  //既然在这里需要拷贝一次内存，那应该就可以填充一些多余的0，实现padding，去掉image_packing中的分支。
-
-  // 分配packed_image内存
+  //分配device_packed_image内存
   cudaPitchedPtr device_packed_image;
   cudaExtent device_packed_image_extent = make_cudaExtent(
       sizeof(float) * ti.tile_in_w, ti.tile_in_h, ti.num_tiles * is.ic);
   cudaError_t err = cudaMalloc3D(&device_packed_image, device_packed_image_extent);
-  printf("%d %d\n", ti.num_tiles, is.ic);
-  image_packing<<<DIV_UP(ti.num_tiles * is.ic, 1024), 1024>>>(device_image, device_packed_image, is, ti);
-  cudaDeviceSynchronize();
-  cudaFree(device_image.ptr);
 
+  // 将packed_image拷贝到GPU内存上
+  cudaMemcpy3DParms device_packed_image_copy_parms = {0};
+  device_packed_image_copy_parms.srcPtr.ptr = packed_image;
+  device_packed_image_copy_parms.srcPtr.xsize = ti.num_tiles * is.ic;
+  device_packed_image_copy_parms.srcPtr.ysize = ti.tile_in_h;
+  device_packed_image_copy_parms.srcPtr.pitch = ti.tile_in_w * sizeof(float);
+  device_packed_image_copy_parms.dstPtr = device_packed_image;
+  device_packed_image_copy_parms.extent = device_packed_image_extent;
+  device_packed_image_copy_parms.kind = cudaMemcpyHostToDevice;
+  cudaMemcpy3D(&device_packed_image_copy_parms);
+
+
+  //分配V_tensor内存
   cudaExtent V_tensor_extent = make_cudaExtent(
       sizeof(float) * vs.ic * vs.num_tiles, ti.tile_in_w, ti.tile_in_h);
   cudaPitchedPtr device_V_tensor;
@@ -232,6 +223,8 @@ void device_image_transform(float *__restrict__ image,
   image_transform<<<DIV_UP(vs.num_tiles * vs.ic, 1024), 1024>>>(
       device_packed_image, device_V_tensor, vs, ti, vs.ic * vs.num_tiles);
   cudaDeviceSynchronize();
+
+  //释放内存，将结果拷贝回主机
   cudaFree(device_packed_image.ptr);
   cudaMemcpy3DParms device_V_copy_parms = {0};
   device_V_copy_parms.srcPtr = device_V_tensor;

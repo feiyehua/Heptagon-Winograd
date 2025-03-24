@@ -352,7 +352,7 @@ void image_packing(float *__restrict__ image,
                    float *__restrict__ packed_image,
                    const image_shape_t is,
                    const tiling_info_t ti) {
-  typedef float(*packedImage_tensor_t)[ti.tile_in_w][ti.num_tiles][is.ic];
+  typedef float(*packedImage_tensor_t)[is.ic][ti.tile_in_h][ti.tile_in_w];
   typedef float(*image_tensor_t)[is.ic][is.h][is.w];
   packedImage_tensor_t packed_image_tensor = (packedImage_tensor_t)packed_image;
   image_tensor_t image_tensor = (image_tensor_t)image;
@@ -368,9 +368,9 @@ void image_packing(float *__restrict__ image,
           // 即：tiling size 为4*4，防止数组越界；超出范围的用0填充
           // image数组已经给出来了，似乎是无法通过一些小trick去掉分支？ 
           if (hh * 4 + h < is.h && ww * 4 + w < is.w)
-            packed_image_tensor[h][w][tile][ic] = image_tensor[batch][ic][(hh * 4 + h)][(ww * 4 + w)];
+            packed_image_tensor[tile][ic][h][w] = image_tensor[batch][ic][(hh * 4 + h)][(ww * 4 + w)];
           else
-            packed_image_tensor[h][w][tile][ic] = 0;
+            packed_image_tensor[tile][ic][h][w] = 0;
         }
       }
     }
@@ -471,8 +471,8 @@ void winograd_convolution(
 
   // parallel accelerate!
   // 150ms
-  // image_packing(image, packed_image, is, ti);
-  device_image_transform(image, V, is, ti,vs);
+  image_packing(image, packed_image, is, ti);
+  device_image_transform(packed_image, V, is, ti,vs);
   // 425ms
   // image_transform(packed_image, V, vs, ti, vs.ic * vs.num_tiles);
   // ti.tile_in_h = ti.tile_in_w = 6

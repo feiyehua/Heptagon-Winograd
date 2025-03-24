@@ -98,7 +98,33 @@ Layer 4 :  Elapse time 828.822374 ms. (    6.56 GFlops)
 Total elapse time: 0.892673. (    6.28 GFlops) 
 `
 
-
+`
+Layer 0 :  Elapse time 38.949966 ms. (    0.00 GFlops) 
+Layer 1 :  Elapse time 0.460386 ms. (    0.15 GFlops) 
+Layer 2 :  Elapse time 1.597643 ms. (    1.56 GFlops) 
+Layer 3 :  Elapse time 22.352695 ms. (    7.60 GFlops) 
+Layer 4 :  Elapse time 721.854687 ms. (    7.53 GFlops) 
+Total elapse time: 0.785215. (    7.14 GFlops) 
+`
+`
+Layer 0 :  Elapse time 7566.001972 ms. (    1.44 GFlops) 
+Layer 1 :  Elapse time 31855.883678 ms. (    7.30 GFlops) 
+Layer 2 :  Elapse time 15184.141000 ms. (    7.52 GFlops) 
+Layer 3 :  Elapse time 31583.126307 ms. (    7.23 GFlops) 
+Layer 4 :  Elapse time 15431.320985 ms. (    7.13 GFlops) 
+Layer 5 :  Elapse time 37436.971664 ms. (    5.88 GFlops) 
+Layer 6 :  Elapse time 37740.124385 ms. (    5.83 GFlops) 
+Layer 7 :  Elapse time 37691.179991 ms. (    5.84 GFlops) 
+Layer 8 :  Elapse time 18541.388671 ms. (    5.51 GFlops) 
+Layer 9 :  Elapse time 41391.911666 ms. (    4.93 GFlops) 
+Layer 10:  Elapse time 41392.256339 ms. (    4.93 GFlops) 
+Layer 11:  Elapse time 41394.100666 ms. (    4.93 GFlops) 
+Layer 12:  Elapse time 7609.156052 ms. (    5.72 GFlops) 
+Layer 13:  Elapse time 7603.738387 ms. (    5.72 GFlops) 
+Layer 14:  Elapse time 7603.749355 ms. (    5.72 GFlops) 
+Layer 15:  Elapse time 7604.112387 ms. (    5.72 GFlops) 
+Total elapse time: 387.629164. (    5.79 GFlops) 
+`
 ### 进行简单的性能分析：
 ```
 Filter took 0 milliseconds to execute.
