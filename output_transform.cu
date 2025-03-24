@@ -1,4 +1,4 @@
-#include"output_transform.cuh"
+#include "output_transform.cuh"
 __global__ void output_transform(cudaPitchedPtr M,  // input tensor
                                  cudaPitchedPtr Y,  // output tensor
                                  const tiling_info_t ti,
@@ -112,15 +112,15 @@ void device_output_transform(float* __restrict__ M,  // input tensor
                              const V_shape_t vs) {
   cudaPitchedPtr device_M_tensor;
   cudaExtent device_M_tensor_extent = make_cudaExtent(
-      vs.num_tiles * sizeof(float), us.oc, ti.tile_in_w * ti.tile_in_h);
+      vs.num_tiles * sizeof(float) * us.oc, ti.tile_in_w, ti.tile_in_h);
   cudaMalloc3D(&device_M_tensor, device_M_tensor_extent);
 
   // 将M_tensor拷贝到GPU内存上
   cudaMemcpy3DParms device_M_tensor_copy_parms = {0};
   device_M_tensor_copy_parms.srcPtr.ptr = M;
-  device_M_tensor_copy_parms.srcPtr.xsize = ti.tile_in_w * ti.tile_in_h;
-  device_M_tensor_copy_parms.srcPtr.ysize = us.oc;
-  device_M_tensor_copy_parms.srcPtr.pitch = vs.num_tiles * sizeof(float);
+  device_M_tensor_copy_parms.srcPtr.xsize = ti.tile_in_h;
+  device_M_tensor_copy_parms.srcPtr.ysize = ti.tile_in_w;
+  device_M_tensor_copy_parms.srcPtr.pitch = vs.num_tiles * us.oc * sizeof(float);
   device_M_tensor_copy_parms.dstPtr = device_M_tensor;
   device_M_tensor_copy_parms.extent = device_M_tensor_extent;
   device_M_tensor_copy_parms.kind = cudaMemcpyHostToDevice;
@@ -129,7 +129,7 @@ void device_output_transform(float* __restrict__ M,  // input tensor
   // 分配Y_tensor内存
   cudaPitchedPtr device_Y_tensor;
   cudaExtent device_Y_tensor_extent = make_cudaExtent(
-      sizeof(float) * ti.tile_in_w, ti.tile_in_h, us.oc * vs.num_tiles);
+      sizeof(float) * ti.tile_out_w, ti.tile_in_h, us.oc * vs.num_tiles);
   cudaMalloc3D(&device_Y_tensor, device_Y_tensor_extent);
 
   //计算Y_tensor
@@ -141,8 +141,10 @@ void device_output_transform(float* __restrict__ M,  // input tensor
   cudaMemcpy3DParms host_Y_tensor_copy_parms = {0};
   host_Y_tensor_copy_parms.srcPtr = device_Y_tensor;
   host_Y_tensor_copy_parms.dstPtr.ptr = Y;
-  host_Y_tensor_copy_parms.extent = make_cudaExtent(
-      sizeof(float) * ti.tile_in_w, ti.tile_in_h, us.oc * vs.num_tiles);
+  host_Y_tensor_copy_parms.dstPtr.pitch = sizeof(float) * ti.tile_out_w;
+  host_Y_tensor_copy_parms.dstPtr.ysize = ti.tile_in_h;
+  host_Y_tensor_copy_parms.dstPtr.xsize = us.oc * vs.num_tiles;
+  host_Y_tensor_copy_parms.extent = device_Y_tensor_extent;
   host_Y_tensor_copy_parms.kind = cudaMemcpyDeviceToHost;
   cudaMemcpy3D(&host_Y_tensor_copy_parms);
 

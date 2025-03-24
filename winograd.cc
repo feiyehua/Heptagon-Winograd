@@ -5,9 +5,9 @@
 #include <cstring>
 
 #include "filter_transform.cuh"
-#include "utils.h"
 #include "image_transform.cuh"
-#include"output_transform.cuh"
+#include "output_transform.cuh"
+#include "utils.h"
 // get V tensor = BT*d*B
 void image_transform(float *__restrict__ packed_image,
                      float *__restrict__ V,
@@ -372,7 +372,7 @@ void image_packing(float *__restrict__ image,
           int64_t batch = tidx.b, ww = tidx.tw, hh = tidx.th;
           // Something to be done here
           // 即：tiling size 为4*4，防止数组越界；超出范围的用0填充
-          // image数组已经给出来了，似乎是无法通过一些小trick去掉分支？ 
+          // image数组已经给出来了，似乎是无法通过一些小trick去掉分支？
           if (hh * 4 + h < is.h && ww * 4 + w < is.w)
             packed_image_tensor[tile][ic][h][w] = image_tensor[batch][ic][(hh * 4 + h)][(ww * 4 + w)];
           else
@@ -387,7 +387,7 @@ void output_unpacking_store(float *__restrict__ Y,
                             float *__restrict__ out,
                             const out_shape_t os,
                             const tiling_info_t ti) {
-  typedef float(*Y_tensor_t)[ti.num_tiles][ti.tile_in_h][ti.tile_in_w];
+  typedef float(*Y_tensor_t)[ti.num_tiles][ti.tile_in_h][ti.tile_out_w];
   typedef float(*out_tensor_t)[os.oc][os.h][os.w];
   Y_tensor_t Y_tensor = (Y_tensor_t)Y;
   out_tensor_t out_tensor = (out_tensor_t)out;
@@ -479,11 +479,11 @@ void winograd_convolution(
   // parallel accelerate!
   // 150ms
   image_packing(image, packed_image, is, ti);
-  device_image_transform(packed_image, V, is, ti,vs);
+  device_image_transform(packed_image, V, is, ti, vs);
   // 425ms
   // image_transform(packed_image, V, vs, ti, vs.ic * vs.num_tiles);
   // ti.tile_in_h = ti.tile_in_w = 6
-  
+
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
       // 定义出U V M Tensor指针

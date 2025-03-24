@@ -1,4 +1,4 @@
-CFLAG = -O4 -g -openmp -I/usr/local/cuda/include/
+CFLAG = -O4 -g -I/usr/local/cuda/include/
 NVCCFLAG = -O4 -g -G
 
 BUILD_DIR = build
