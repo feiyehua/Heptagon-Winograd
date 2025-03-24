@@ -7,6 +7,7 @@
 #include "filter_transform.cuh"
 #include "utils.h"
 #include "image_transform.cuh"
+#include"output_transform.cuh"
 // get V tensor = BT*d*B
 void image_transform(float *__restrict__ packed_image,
                      float *__restrict__ V,
@@ -386,7 +387,7 @@ void output_unpacking_store(float *__restrict__ Y,
                             float *__restrict__ out,
                             const out_shape_t os,
                             const tiling_info_t ti) {
-  typedef float(*Y_tensor_t)[ti.tile_in_w][os.oc][ti.num_tiles];
+  typedef float(*Y_tensor_t)[ti.num_tiles][ti.tile_in_h][ti.tile_in_w];
   typedef float(*out_tensor_t)[os.oc][os.h][os.w];
   Y_tensor_t Y_tensor = (Y_tensor_t)Y;
   out_tensor_t out_tensor = (out_tensor_t)out;
@@ -399,7 +400,7 @@ void output_unpacking_store(float *__restrict__ Y,
           tile_index_t tidx = get_tile_index(tile, ti);
           int64_t batch = tidx.b, ww = tidx.tw, hh = tidx.th;
           if (hh * 4 + h < os.h && ww * 4 + w < os.w)
-            out_tensor[batch][oc][(hh * 4 + h)][(ww * 4 + w)] = Y_tensor[h][w][oc][tile];
+            out_tensor[batch][oc][(hh * 4 + h)][(ww * 4 + w)] = Y_tensor[oc][tile][h][w];
         }
       }
     }
@@ -503,7 +504,8 @@ void winograd_convolution(
     }
   }
   // 6000ms
-  output_transform(M, Y, ti, us.oc * vs.num_tiles);
+  device_output_transform(M, Y, ti, us.oc * vs.num_tiles, us, vs);
+  // output_transform(M, Y, ti, us.oc * vs.num_tiles);
   // 5000ms
   output_unpacking_store(Y, out, os, ti);
 
