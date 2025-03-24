@@ -9,7 +9,11 @@
 `spack env activate -p winograd`
 ### 使用了的spack包
 
+## 性能分析
+`numactl --cpunodebind=0-3 --membind=0-3 perf stat -ddd perf record -e cycles:u -g -- ./winograd conf/vgg16.conf `
 
+使用nsys
+`nsys profile --stats=true -o winograd1 ./winograd conf/vgg16.conf`
 ## 进行了的优化
 ### 计算时的内存访问优化
 ``` cpp

@@ -183,20 +183,10 @@ Layer 14:  Elapse time 339.550654 ms. (  128.07 GFlops)
 Layer 15:  Elapse time 340.331316 ms. (  127.78 GFlops) 
 Total elapse time: 28.487402. (   78.81 GFlops) 
 `
+提升显著！
 
-### 进行简单的性能分析：
-```
-Filter took 0 milliseconds to execute.
-Image took 573 milliseconds to execute.
-Sgemm took 2877 milliseconds to execute.
-Output took 11678 milliseconds to execute.
-Filter took 0 milliseconds to execute.
-Image took 544 milliseconds to execute.
-Sgemm took 2874 milliseconds to execute.
-Output took 11021 milliseconds to execute.
-Filter took 0 milliseconds to execute.
-Image took 546 milliseconds to execute.
-Sgemm took 2875 milliseconds to execute.
-Output took 10698 milliseconds to execute.
-Layer 0 :  Elapse time 14775.998036 ms. (    0.74 GFlops) 
-```
+进行性能分析，结果显示主要的性能瓶颈在于：
++ 还没有将矩阵运算转移到GPU上
++ 在Host和Device之间复制数据消耗了过多时间
+考虑将矩阵运算迁移到Device上，其他内存密集型任务仍然保留在CPU上运行，并且避免D->H,H->D的大规模数据传输。
+

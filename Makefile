@@ -1,6 +1,6 @@
 CFLAG = -O4 -g -fopenmp -I/usr/local/cuda/include/ -lcudart -L/usr/local/cuda/lib64
 
-NVCCFLAG = -O4 -g -G
+NVCCFLAG = -O4 -g
 
 BUILD_DIR = build
 

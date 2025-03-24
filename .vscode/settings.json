@@ -41,7 +41,9 @@
         "variant": "cpp",
         "__locale": "cpp",
         "__verbose_abort": "cpp",
-        "ios": "cpp"
+        "ios": "cpp",
+        "iostream": "cpp",
+        "chrono": "cpp"
     },
     "C_Cpp.formatting": "clangFormat",
     "editor.formatOnPaste": true,

@@ -2,3 +2,6 @@ winograd
 .DS_Store
 slurm*
 build
+*.nsys-rep
+*.sqlite
+*.data

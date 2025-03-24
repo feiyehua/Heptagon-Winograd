@@ -3,11 +3,16 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-
+#include<chrono>
+#include<iostream>
 #include "filter_transform.cuh"
 #include "image_transform.cuh"
 #include "output_transform.cuh"
 #include "utils.h"
+
+
+
+
 // get V tensor = BT*d*B
 void image_transform(float *__restrict__ packed_image,
                      float *__restrict__ V,
@@ -444,6 +449,9 @@ void winograd_convolution(
     const int output_channel_num,
     const int batch_num,
     float *__restrict__ out) {
+  std::chrono::system_clock::time_point start;
+  std::chrono::system_clock::time_point end;
+  std::chrono::milliseconds duration;
   /* new vars of shape */
   // image shape
   const image_shape_t is = {.bs = batch_num, .ic = input_channel_num, .h = image_height, .w = image_width};
@@ -471,17 +479,26 @@ void winograd_convolution(
 
   //进行两次变换
   device_filter_transform(filter, U, fs, us, us.oc * us.ic);
+  
   // filter_transform(filter, transformed_filter, fs, us, us.oc * us.ic);
   // filter_packing(transformed_filter, U, us);
 
   // parallel accelerate!
   // 150ms
+  start = std::chrono::high_resolution_clock::now();
   image_packing(image, packed_image, is, ti);
+  end = std::chrono::high_resolution_clock::now();
+  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Function took " << duration.count() << " milliseconds to execute." << std::endl;
+  start = std::chrono::high_resolution_clock::now();
   device_image_transform(packed_image, V, is, ti, vs);
+  end = std::chrono::high_resolution_clock::now();
+  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Function took " << duration.count() << " milliseconds to execute." << std::endl;
   // 425ms
   // image_transform(packed_image, V, vs, ti, vs.ic * vs.num_tiles);
   // ti.tile_in_h = ti.tile_in_w = 6
-
+  start = std::chrono::high_resolution_clock::now();
 #pragma omp parallel for collapse(2)
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
@@ -502,11 +519,22 @@ void winograd_convolution(
             (float *)(M_tensor[h][w]));
     }
   }
+  end = std::chrono::high_resolution_clock::now();
+  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Function took " << duration.count() << " milliseconds to execute." << std::endl;
   // 6000ms
+  start = std::chrono::high_resolution_clock::now();
   device_output_transform(M, Y, ti, us.oc * vs.num_tiles, us, vs);
+  end = std::chrono::high_resolution_clock::now();
+  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Function took " << duration.count() << " milliseconds to execute." << std::endl;
   // output_transform(M, Y, ti, us.oc * vs.num_tiles);
   // 5000ms
+  start = std::chrono::high_resolution_clock::now();
   output_unpacking_store(Y, out, os, ti);
+  end = std::chrono::high_resolution_clock::now();
+  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Function took " << duration.count() << " milliseconds to execute." << std::endl;
 
   // free(packed_filter);
   free(packed_image);
