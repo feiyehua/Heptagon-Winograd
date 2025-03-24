@@ -135,7 +135,54 @@ Layer 3 :  Elapse time 21.558603 ms. (    7.88 GFlops)
 Layer 4 :  Elapse time 662.261645 ms. (    8.21 GFlops) 
 Total elapse time: 0.724183. (    7.74 GFlops) 
 `
+`
+Layer 0 :  Elapse time 6147.348642 ms. (    1.77 GFlops) 
+Layer 1 :  Elapse time 30793.569009 ms. (    7.55 GFlops) 
+Layer 2 :  Elapse time 14657.356342 ms. (    7.79 GFlops) 
+Layer 3 :  Elapse time 30932.409604 ms. (    7.38 GFlops) 
+Layer 4 :  Elapse time 15101.811647 ms. (    7.29 GFlops) 
+Layer 5 :  Elapse time 36791.375001 ms. (    5.98 GFlops) 
+Layer 6 :  Elapse time 36786.189000 ms. (    5.98 GFlops) 
+Layer 7 :  Elapse time 36774.437348 ms. (    5.99 GFlops) 
+Layer 8 :  Elapse time 18225.524664 ms. (    5.60 GFlops) 
+Layer 9 :  Elapse time 41456.574361 ms. (    4.92 GFlops) 
+Layer 10:  Elapse time 41385.831992 ms. (    4.93 GFlops) 
+Layer 11:  Elapse time 41467.782736 ms. (    4.92 GFlops) 
+Layer 12:  Elapse time 7612.705708 ms. (    5.71 GFlops) 
+Layer 13:  Elapse time 7622.874022 ms. (    5.70 GFlops) 
+Layer 14:  Elapse time 7621.769667 ms. (    5.71 GFlops) 
+Layer 15:  Elapse time 7629.914999 ms. (    5.70 GFlops) 
+Total elapse time: 381.007475. (    5.89 GFlops) 
+`
 
+### 5 在CPU上并行进行某些计算
+`
+Layer 0 :  Elapse time 89.387337 ms. (    0.00 GFlops) 
+Layer 1 :  Elapse time 0.653028 ms. (    0.11 GFlops) 
+Layer 2 :  Elapse time 1.711051 ms. (    1.45 GFlops) 
+Layer 3 :  Elapse time 7.510026 ms. (   22.62 GFlops) 
+Layer 4 :  Elapse time 175.617695 ms. (   30.95 GFlops) 
+Total elapse time: 0.274879. (   20.40 GFlops) 
+`
+`
+Layer 0 :  Elapse time 2622.104009 ms. (    4.16 GFlops) 
+Layer 1 :  Elapse time 5294.917027 ms. (   43.92 GFlops) 
+Layer 2 :  Elapse time 2023.618698 ms. (   56.43 GFlops) 
+Layer 3 :  Elapse time 3124.241670 ms. (   73.10 GFlops) 
+Layer 4 :  Elapse time 1264.706612 ms. (   87.04 GFlops) 
+Layer 5 :  Elapse time 2180.993319 ms. (  100.94 GFlops) 
+Layer 6 :  Elapse time 2174.528281 ms. (  101.24 GFlops) 
+Layer 7 :  Elapse time 2175.268014 ms. (  101.21 GFlops) 
+Layer 8 :  Elapse time 970.446030 ms. (  105.18 GFlops) 
+Layer 9 :  Elapse time 1765.080611 ms. (  115.66 GFlops) 
+Layer 10:  Elapse time 1763.073285 ms. (  115.79 GFlops) 
+Layer 11:  Elapse time 1763.282696 ms. (  115.78 GFlops) 
+Layer 12:  Elapse time 345.638037 ms. (  125.82 GFlops) 
+Layer 13:  Elapse time 339.621305 ms. (  128.04 GFlops) 
+Layer 14:  Elapse time 339.550654 ms. (  128.07 GFlops) 
+Layer 15:  Elapse time 340.331316 ms. (  127.78 GFlops) 
+Total elapse time: 28.487402. (   78.81 GFlops) 
+`
 
 ### 进行简单的性能分析：
 ```

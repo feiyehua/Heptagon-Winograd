@@ -361,12 +361,11 @@ void image_packing(float *__restrict__ image,
   packedImage_tensor_t packed_image_tensor = (packedImage_tensor_t)packed_image;
   image_tensor_t image_tensor = (image_tensor_t)image;
 
-  // batch个image，每个image有ts.num_tile_per_image个tiles，对每个tiles求卷积
+// batch个image，每个image有ts.num_tile_per_image个tiles，对每个tiles求卷积
+#pragma omp parallel for collapse(1)
   for (int64_t tile = 0; tile < ti.num_tiles; tile++) {
     for (int64_t ic = 0; ic < is.ic; ic++) {
-#pragma omp parallel for
       for (int64_t h = 0; h < ti.tile_in_h; ++h) {
-#pragma omp parallel for
         for (int64_t w = 0; w < ti.tile_in_w; ++w) {
           tile_index_t tidx = get_tile_index(tile, ti);
           int64_t batch = tidx.b, ww = tidx.tw, hh = tidx.th;
@@ -391,9 +390,8 @@ void output_unpacking_store(float *__restrict__ Y,
   typedef float(*out_tensor_t)[os.oc][os.h][os.w];
   Y_tensor_t Y_tensor = (Y_tensor_t)Y;
   out_tensor_t out_tensor = (out_tensor_t)out;
-#pragma omp parallel for
+#pragma omp parallel for collapse(2)
   for (int64_t h = 0; h < ti.tile_out_h; ++h) {
-#pragma omp parallel for
     for (int64_t w = 0; w < ti.tile_out_w; ++w) {
       for (int64_t oc = 0; oc < os.oc; oc++) {
         for (int64_t tile = 0; tile < ti.num_tiles; tile++) {
@@ -484,6 +482,7 @@ void winograd_convolution(
   // image_transform(packed_image, V, vs, ti, vs.ic * vs.num_tiles);
   // ti.tile_in_h = ti.tile_in_w = 6
 
+#pragma omp parallel for collapse(2)
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
       // 定义出U V M Tensor指针
