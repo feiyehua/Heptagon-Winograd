@@ -1,6 +1,6 @@
 winograd
 .DS_Store
-slurm*
+slurm-*
 build
 *.nsys-rep
 *.sqlite
