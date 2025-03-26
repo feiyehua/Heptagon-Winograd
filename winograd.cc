@@ -1,17 +1,16 @@
 #include <cassert>
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include<chrono>
-#include<iostream>
+#include <iostream>
+
+#include "cublas_sgemm.cuh"
 #include "filter_transform.cuh"
 #include "image_transform.cuh"
 #include "output_transform.cuh"
 #include "utils.h"
-
-
-
 
 // get V tensor = BT*d*B
 void image_transform(float *__restrict__ packed_image,
@@ -478,63 +477,62 @@ void winograd_convolution(
   float *Y = (float *)malloc(sizeof(float) * ti.tile_out_h * ti.tile_in_w * os.oc * ti.num_tiles);
 
   //进行两次变换
-  device_filter_transform(filter, U, fs, us, us.oc * us.ic);
-  
+  float *device_U_tensor = NULL;
+  int ldu = 0;
+  device_filter_transform(filter, U, fs, us, us.oc * us.ic, &device_U_tensor,&ldu);
+
   // filter_transform(filter, transformed_filter, fs, us, us.oc * us.ic);
   // filter_packing(transformed_filter, U, us);
 
   // parallel accelerate!
   // 150ms
-  start = std::chrono::high_resolution_clock::now();
+  float *device_V_tensor;
+  int ldv = 0;
   image_packing(image, packed_image, is, ti);
-  end = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "Function took " << duration.count() << " milliseconds to execute." << std::endl;
-  start = std::chrono::high_resolution_clock::now();
-  device_image_transform(packed_image, V, is, ti, vs);
-  end = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "Function took " << duration.count() << " milliseconds to execute." << std::endl;
+  device_image_transform(packed_image, V, is, ti, vs, &device_V_tensor,&ldv);
   // 425ms
   // image_transform(packed_image, V, vs, ti, vs.ic * vs.num_tiles);
   // ti.tile_in_h = ti.tile_in_w = 6
-  start = std::chrono::high_resolution_clock::now();
-#pragma omp parallel for collapse(2)
+  // #pragma omp parallel for collapse(2)
+  cudaPitchedPtr device_M_tensor;
+  alloc_M_Tensor_Memory(device_M_tensor,vs,us,ti);
+
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
       // 定义出U V M Tensor指针
-      typedef float(*U_tensor_t)[ti.tile_in_w][us.oc][us.ic];
-      typedef float(*V_tensor_t)[ti.tile_in_w][vs.num_tiles][vs.ic];
-      typedef float(*M_tensor_t)[ti.tile_in_w][us.oc][vs.num_tiles];
+      typedef float(*U_tensor_t)[ti.tile_in_w][us.oc][ldu];
+      typedef float(*V_tensor_t)[ti.tile_in_w][vs.num_tiles][ldv];
+      typedef float(*M_tensor_t)[ti.tile_in_w][us.oc][device_M_tensor.pitch/sizeof(float)];
       // 每次循环的时候都会定义一遍？不过估计会被编译器优化掉
-      U_tensor_t U_tensor = (U_tensor_t)U;
-      V_tensor_t V_tensor = (V_tensor_t)V;
-      M_tensor_t M_tensor = (M_tensor_t)M;
+      U_tensor_t U_tensor = (U_tensor_t)device_U_tensor;
+      V_tensor_t V_tensor = (V_tensor_t)device_V_tensor;
+      M_tensor_t M_tensor = (M_tensor_t)device_M_tensor.ptr;
       // 90ms
-      sgemm(vs.num_tiles,
-            us.oc,
-            us.ic,
-            (float *)(V_tensor[h][w]),
-            (float *)(U_tensor[h][w]),
-            (float *)(M_tensor[h][w]));
+      cublas_sgemm((float *)U_tensor[h][w],
+                   us.ic,
+                   (float *)V_tensor[h][w],
+                   vs.ic,
+                   (float *)M_tensor[h][w],
+                   device_M_tensor.pitch / sizeof(float),
+                   us.oc,
+                   vs.num_tiles,
+                   us.ic,
+                   us,
+                   vs,
+                   ti);
+      // sgemm(vs.num_tiles,
+      //       us.oc,
+      //       us.ic,
+      //       (float *)(V_tensor[h][w]),
+      //       (float *)(U_tensor[h][w]),
+      //       (float *)(M_tensor[h][w]));
     }
   }
-  end = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "Function took " << duration.count() << " milliseconds to execute." << std::endl;
   // 6000ms
-  start = std::chrono::high_resolution_clock::now();
-  device_output_transform(M, Y, ti, us.oc * vs.num_tiles, us, vs);
-  end = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "Function took " << duration.count() << " milliseconds to execute." << std::endl;
+  device_output_transform(device_M_tensor, Y, ti, us.oc * vs.num_tiles, us, vs);
   // output_transform(M, Y, ti, us.oc * vs.num_tiles);
   // 5000ms
-  start = std::chrono::high_resolution_clock::now();
   output_unpacking_store(Y, out, os, ti);
-  end = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "Function took " << duration.count() << " milliseconds to execute." << std::endl;
 
   // free(packed_filter);
   free(packed_image);

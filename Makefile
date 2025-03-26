@@ -4,8 +4,8 @@ NVCCFLAG = -O4 -g
 
 BUILD_DIR = build
 
-all:build/filter_transform_cuda.o build/image_transform_cuda.o build/output_transform_cuda.o build/driver.o build/winograd.o
-	nvcc build/* -std=c++11 ${NVCCFLAG} -Xcompiler -fopenmp -o winograd
+all:build/filter_transform_cuda.o build/image_transform_cuda.o build/output_transform_cuda.o build/driver.o build/winograd.o build/cublas_sgemm_cuda.o
+	nvcc build/* -std=c++11 ${NVCCFLAG} -Xcompiler -fopenmp -o winograd -l cublas
 
 build/driver.o:driver.cc
 	g++ -c driver.cc -std=c++11 ${CFLAG} -o build/driver.o
@@ -22,6 +22,8 @@ build/image_transform_cuda.o:image_transform.cu
 build/output_transform_cuda.o:output_transform.cu
 	nvcc -c output_transform.cu -std=c++11 ${NVCCFLAG} -o build/output_transform.o
 
+build/cublas_sgemm_cuda.o:cublas_sgemm.cu
+	nvcc -c cublas_sgemm.cu -std=c++11 ${NVCCFLAG} -o build/cublas_sgemm.o
 clean:
 	rm -f winograd
 	rm -rf build

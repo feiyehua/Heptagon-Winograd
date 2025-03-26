@@ -7,7 +7,9 @@ __host__ void device_filter_transform(
     float *__restrict__ U,              // collapsed_dim_size*us.h*us.w
     const filter_shape_t fs,
     const U_shape_t us,
-    const int64_t collapsed_dim_size) {
+    const int64_t collapsed_dim_size,
+    float** device_U_tensor,
+  int* ldu) {
   float *__restrict__ device_filter;
   float *__restrict__ device_U;
   float *__restrict__ device_packed_U;
@@ -19,10 +21,12 @@ __host__ void device_filter_transform(
   thread_filter_transform<<<us.oc, us.ic>>>(
       device_filter, device_U, device_packed_U, fs, us, collapsed_dim_size);
   cudaDeviceSynchronize();
-  cudaMemcpy(U, device_packed_U, sizeof(float) * collapsed_dim_size * us.h * us.w, cudaMemcpyDeviceToHost);
-  cudaFree(device_packed_U);
-  cudaFree(device_U);
   cudaFree(device_filter);
+  // cudaMemcpy(U, device_packed_U, sizeof(float) * collapsed_dim_size * us.h * us.w, cudaMemcpyDeviceToHost);
+  // cudaFree(device_packed_U);
+  // cudaFree(device_U);
+  *device_U_tensor = device_packed_U;
+  *ldu = us.ic;
 }
 
 // __device__ void device_filter_packing(float *__restrict__ filter_tensor,

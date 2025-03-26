@@ -16,5 +16,7 @@ void device_image_transform(float *__restrict__ image,
                             float *__restrict__ V,
                             const image_shape_t is,
                             const tiling_info_t ti,
-                            const V_shape_t vs);
+                            const V_shape_t vs,
+                            float **V_tensor,
+                            int *idv);
 #endif
