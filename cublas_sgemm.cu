@@ -41,7 +41,7 @@ void cublas_sgemm(float* a,
               ldc);
   cudaDeviceSynchronize();
   cublasDestroy(handle);
-  cudaFree(a);
-  cudaFree(b);
+  // cudaFree(a);
+  // cudaFree(b);
   // printf("%d", err);
 }

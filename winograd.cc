@@ -1,3 +1,5 @@
+#include <cuda_runtime.h>
+
 #include <cassert>
 #include <chrono>
 #include <cstdint>
@@ -479,7 +481,7 @@ void winograd_convolution(
   //进行两次变换
   float *device_U_tensor = NULL;
   int ldu = 0;
-  device_filter_transform(filter, U, fs, us, us.oc * us.ic, &device_U_tensor,&ldu);
+  device_filter_transform(filter, U, fs, us, us.oc * us.ic, &device_U_tensor, &ldu);
 
   // filter_transform(filter, transformed_filter, fs, us, us.oc * us.ic);
   // filter_packing(transformed_filter, U, us);
@@ -489,20 +491,20 @@ void winograd_convolution(
   float *device_V_tensor;
   int ldv = 0;
   image_packing(image, packed_image, is, ti);
-  device_image_transform(packed_image, V, is, ti, vs, &device_V_tensor,&ldv);
+  device_image_transform(packed_image, V, is, ti, vs, &device_V_tensor, &ldv);
   // 425ms
   // image_transform(packed_image, V, vs, ti, vs.ic * vs.num_tiles);
   // ti.tile_in_h = ti.tile_in_w = 6
   // #pragma omp parallel for collapse(2)
   cudaPitchedPtr device_M_tensor;
-  alloc_M_Tensor_Memory(device_M_tensor,vs,us,ti);
+  alloc_M_Tensor_Memory(device_M_tensor, vs, us, ti);
 
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
       // 定义出U V M Tensor指针
       typedef float(*U_tensor_t)[ti.tile_in_w][us.oc][ldu];
       typedef float(*V_tensor_t)[ti.tile_in_w][vs.num_tiles][ldv];
-      typedef float(*M_tensor_t)[ti.tile_in_w][us.oc][device_M_tensor.pitch/sizeof(float)];
+      typedef float(*M_tensor_t)[ti.tile_in_w][us.oc][device_M_tensor.pitch / us.oc / sizeof(float)];
       // 每次循环的时候都会定义一遍？不过估计会被编译器优化掉
       U_tensor_t U_tensor = (U_tensor_t)device_U_tensor;
       V_tensor_t V_tensor = (V_tensor_t)device_V_tensor;
@@ -513,7 +515,7 @@ void winograd_convolution(
                    (float *)V_tensor[h][w],
                    vs.ic,
                    (float *)M_tensor[h][w],
-                   device_M_tensor.pitch / sizeof(float),
+                   vs.num_tiles,
                    us.oc,
                    vs.num_tiles,
                    us.ic,
@@ -528,6 +530,8 @@ void winograd_convolution(
       //       (float *)(M_tensor[h][w]));
     }
   }
+  cudaFree(device_U_tensor);
+  cudaFree(device_V_tensor);
   // 6000ms
   device_output_transform(device_M_tensor, Y, ti, us.oc * vs.num_tiles, us, vs);
   // output_transform(M, Y, ti, us.oc * vs.num_tiles);
