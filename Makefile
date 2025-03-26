@@ -1,29 +1,41 @@
-CFLAG = -O4 -g -fopenmp -I/usr/local/cuda/include/ -lcudart -L/usr/local/cuda/lib64
+# Compiler flags
+CFLAGS = -O4 -g -std=c++11 -fopenmp -I./include -I/usr/local/cuda/include
+NVCCFLAGS = -O4 -g -std=c++11 -I./include -arch=sm_70
 
-NVCCFLAG = -O4 -g
-
+# Directories
+SRC_CUDA = src/cuda
+SRC_CPU = src/cpu
+INCLUDE_DIR = include
 BUILD_DIR = build
 
-all:build/filter_transform_cuda.o build/image_transform_cuda.o build/output_transform_cuda.o build/driver.o build/winograd.o build/cublas_sgemm_cuda.o
-	nvcc build/* -std=c++11 ${NVCCFLAG} -Xcompiler -fopenmp -o winograd -l cublas
+CUDA_SOURCES := $(wildcard src/cuda/*.cu)
+CPU_SOURCES := $(wildcard src/cpu/*.cc)
 
-build/driver.o:driver.cc
-	g++ -c driver.cc -std=c++11 ${CFLAG} -o build/driver.o
+# Object files
+# CUDA_OBJECTS := $(patsubst %.cu, $(BUILD_DIR)/%.o, $(CUDA_SOURCES))
+# CPU_OBJECTS := $(patsubst %.cc, $(BUILD_DIR)/%.o, $(CPU_SOURCES))
+CPU_OBJECTS := $(patsubst src/cpu/%.cc, $(BUILD_DIR)/%.o, $(CPU_SOURCES))
+CUDA_OBJECTS := $(patsubst src/cuda/%.cu, $(BUILD_DIR)/%.o, $(CUDA_SOURCES))
 
-build/winograd.o:winograd.cc
-	g++ -c winograd.cc -std=c++11 ${CFLAG} -o build/winograd.o
+# CUDA_OBJECTS := $(addprefix $(BUILD_DIR)/, filter_transform.o image_transform.o output_transform.o cublas_sgemm.o)
+# CPU_OBJECTS := $(addprefix $(BUILD_DIR)/, driver.o winograd.o)
 
-build/filter_transform_cuda.o:filter_transform.cu
-	nvcc -c filter_transform.cu -std=c++11 ${NVCCFLAG} -o build/filter_transform.o
+# Targets
+all: winograd
 
-build/image_transform_cuda.o:image_transform.cu
-	nvcc -c image_transform.cu -std=c++11 ${NVCCFLAG} -o build/image_transform.o
+winograd: $(CUDA_OBJECTS) $(CPU_OBJECTS) $(BUILD_DIR)/driver.o
+	nvcc -o $@ $^ -Xcompiler -fopenmp -lcublas
 
-build/output_transform_cuda.o:output_transform.cu
-	nvcc -c output_transform.cu -std=c++11 ${NVCCFLAG} -o build/output_transform.o
+$(BUILD_DIR)/%.o: $(SRC_CUDA)/%.cu
+	nvcc -c $< $(NVCCFLAGS) -o $@
 
-build/cublas_sgemm_cuda.o:cublas_sgemm.cu
-	nvcc -c cublas_sgemm.cu -std=c++11 ${NVCCFLAG} -o build/cublas_sgemm.o
+$(BUILD_DIR)/%.o: $(SRC_CPU)/%.cc
+	g++ -c $< $(CFLAGS) -o $@
+
+$(BUILD_DIR)/driver.o:driver.cc
+	g++ -c driver.cc $(CFLAGS) -o $(BUILD_DIR)/driver.o
+
+.PHONY: clean
+
 clean:
-	rm -f winograd
-	rm -rf build
+	rm -rf $(BUILD_DIR) winograd
