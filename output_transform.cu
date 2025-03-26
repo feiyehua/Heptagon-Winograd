@@ -109,8 +109,6 @@ void alloc_M_Tensor_Memory(cudaPitchedPtr& M_tensor, V_shape_t vs, U_shape_t us,
   cudaExtent device_M_tensor_extent = make_cudaExtent(
       vs.num_tiles * sizeof(float) * us.oc, ti.tile_in_w, ti.tile_in_h);
   cudaMalloc3D(&device_M_tensor, device_M_tensor_extent);
-  printf("%ld\n", device_M_tensor.pitch * device_M_tensor.xsize * device_M_tensor.ysize);
-
   M_tensor = device_M_tensor;
 }
 

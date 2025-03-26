@@ -190,3 +190,24 @@ Total elapse time: 28.487402. (   78.81 GFlops)
 + 在Host和Device之间复制数据消耗了过多时间
 考虑将矩阵运算迁移到Device上，其他内存密集型任务仍然保留在CPU上运行，并且避免D->H,H->D的大规模数据传输。
 
+### 6 在GPU上进行矩阵乘法
+尝试手写矩阵乘法，发现效果不佳。最终选择了使用Cublas。
+```
+Layer 0 :  Elapse time 2508.474271 ms. (    4.35 GFlops) 
+Layer 1 :  Elapse time 3951.502641 ms. (   58.85 GFlops) 
+Layer 2 :  Elapse time 1378.393968 ms. (   82.84 GFlops) 
+Layer 3 :  Elapse time 1582.231363 ms. (  144.34 GFlops) 
+Layer 4 :  Elapse time 655.709028 ms. (  167.87 GFlops) 
+Layer 5 :  Elapse time 765.391986 ms. (  287.63 GFlops) 
+Layer 6 :  Elapse time 760.832310 ms. (  289.35 GFlops) 
+Layer 7 :  Elapse time 761.743069 ms. (  289.01 GFlops) 
+Layer 8 :  Elapse time 343.159676 ms. (  297.45 GFlops) 
+Layer 9 :  Elapse time 426.395337 ms. (  478.77 GFlops) 
+Layer 10:  Elapse time 427.709023 ms. (  477.30 GFlops) 
+Layer 11:  Elapse time 432.726701 ms. (  471.76 GFlops) 
+Layer 12:  Elapse time 102.845271 ms. (  422.83 GFlops) 
+Layer 13:  Elapse time 91.254314 ms. (  476.54 GFlops) 
+Layer 14:  Elapse time 90.542634 ms. (  480.29 GFlops) 
+Layer 15:  Elapse time 91.135343 ms. (  477.16 GFlops) 
+Total elapse time: 14.370047. (  156.23 GFlops) 
+```
