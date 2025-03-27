@@ -47,7 +47,7 @@ __global__ void image_packing(const cudaPitchedPtr device_image,
   }
 }
 // get V tensor = BT*d*B
-__global__ void image_transform(const cudaPitchedPtr device_packed_image,
+__global__ void image_transform(float* __restrict__ device_packed_image,
                                 const cudaPitchedPtr V,
                                 const V_shape_t vs,
                                 const tiling_info_t ti,
@@ -60,15 +60,15 @@ __global__ void image_transform(const cudaPitchedPtr device_packed_image,
   // packed_image_tensor_t packed_image_tensor = (packed_image_tensor_t)packed_image;
   // V_tensor_t V_tensor = (V_tensor_t)V;
 
-  float *packed_image_tensor = (float *)device_packed_image.ptr;
+  float *packed_image_tensor = (float *)device_packed_image;
   float *V_tensor = (float *)V.ptr;
 
   int64_t idx = (blockIdx.x * blockDim.x + threadIdx.x);
   int64_t x_index = (blockIdx.x * blockDim.x + threadIdx.x);
   if (idx >= collapsed_dim_size) return;
 
-  int64_t device_packed_image_yz = device_packed_image.ysize * device_packed_image.pitch / sizeof(float);
-  int64_t device_packed_image_z = device_packed_image.pitch / sizeof(float);
+  int64_t device_packed_image_z = ti.tile_in_w;
+  int64_t device_packed_image_yz = ti.tile_in_h * device_packed_image_z;
 
   int64_t V_tensor_yz = V.ysize * V.pitch / sizeof(float);
   int64_t V_tensor_z = V.pitch / sizeof(float);
@@ -200,22 +200,26 @@ void device_image_transform(float *__restrict__ packed_image,
                             float **V_tensor,
                             int *ldv,
                             Device_Memory_Pool &device_Memory_Pool) {
+  // 直接使用内存映射访问packed_image
+  float *device_packed_image;
+  cudaHostGetDevicePointer(&device_packed_image, packed_image, 0);
   //分配device_packed_image内存
-  cudaPitchedPtr device_packed_image;
-  cudaExtent device_packed_image_extent = make_cudaExtent(
-      sizeof(float) * ti.tile_in_w, ti.tile_in_h, ti.num_tiles * is.ic);
-  cudaError_t err = cudaMalloc3D(&device_packed_image, device_packed_image_extent);
+  // cudaPitchedPtr device_packed_image;
+  // cudaExtent device_packed_image_extent = make_cudaExtent(
+  //     sizeof(float) * ti.tile_in_w, ti.tile_in_h, ti.num_tiles * is.ic);
+  // cudaError_t err = cudaMalloc3D(&device_packed_image,
+  // device_packed_image_extent);
 
   // 将packed_image拷贝到GPU内存上
-  cudaMemcpy3DParms device_packed_image_copy_parms = {0};
-  device_packed_image_copy_parms.srcPtr.ptr = packed_image;
-  device_packed_image_copy_parms.srcPtr.xsize = ti.num_tiles * is.ic;
-  device_packed_image_copy_parms.srcPtr.ysize = ti.tile_in_h;
-  device_packed_image_copy_parms.srcPtr.pitch = ti.tile_in_w * sizeof(float);
-  device_packed_image_copy_parms.dstPtr = device_packed_image;
-  device_packed_image_copy_parms.extent = device_packed_image_extent;
-  device_packed_image_copy_parms.kind = cudaMemcpyHostToDevice;
-  cudaMemcpy3D(&device_packed_image_copy_parms);
+  // cudaMemcpy3DParms device_packed_image_copy_parms = {0};
+  // device_packed_image_copy_parms.srcPtr.ptr = packed_image;
+  // device_packed_image_copy_parms.srcPtr.xsize = ti.num_tiles * is.ic;
+  // device_packed_image_copy_parms.srcPtr.ysize = ti.tile_in_h;
+  // device_packed_image_copy_parms.srcPtr.pitch = ti.tile_in_w * sizeof(float);
+  // device_packed_image_copy_parms.dstPtr = device_packed_image;
+  // device_packed_image_copy_parms.extent = device_packed_image_extent;
+  // device_packed_image_copy_parms.kind = cudaMemcpyHostToDevice;
+  // cudaMemcpy3D(&device_packed_image_copy_parms);
 
   //分配V_tensor内存
   cudaExtent V_tensor_extent = make_cudaExtent(
@@ -227,7 +231,7 @@ void device_image_transform(float *__restrict__ packed_image,
   cudaDeviceSynchronize();
 
   //释放内存，将结果拷贝回主机
-  device_Memory_Pool.free(device_packed_image.ptr);
+  // device_Memory_Pool.free(device_packed_image.ptr);
   // cudaFree(device_packed_image.ptr);
   // cudaMemcpy3DParms device_V_copy_parms = {0};
   // device_V_copy_parms.srcPtr = device_V_tensor;

@@ -475,9 +475,14 @@ void winograd_convolution(
   // vs.num_tiles=ts.num_tiles =  DIV_UP(os.h, 4) * DIV_UP(os.w, 4) * batch_num;
   const V_shape_t vs = get_V_shape(is, ti);
 
+  cudaPitchedPtr device_M_tensor;
+  std::thread device_M_tensor_alloc_thread(alloc_M_Tensor_Memory, std::ref(device_M_tensor), vs, us, ti);
   // allocate memory
   //  float *packed_filter = (float *)malloc(sizeof(float) * fs.h * fs.w * fs.oc * fs.ic);
-  float *packed_image = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * ti.num_tiles * is.ic);
+  float *packed_image;
+  cudaHostAlloc(
+      &packed_image, sizeof(float) * ti.tile_in_h * ti.tile_in_w * ti.num_tiles * is.ic, cudaHostAllocMapped);
+  //  = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * ti.num_tiles * is.ic);
   float *U = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * us.oc * us.ic);
   float *transformed_filter = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * us.oc * us.ic);
   float *V = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * vs.num_tiles * vs.ic);
@@ -502,10 +507,10 @@ void winograd_convolution(
   // image_transform(packed_image, V, vs, ti, vs.ic * vs.num_tiles);
   // ti.tile_in_h = ti.tile_in_w = 6
   // #pragma omp parallel for collapse(2)
-  cudaPitchedPtr device_M_tensor;
-  alloc_M_Tensor_Memory(device_M_tensor, vs, us, ti);
+  // alloc_M_Tensor_Memory(device_M_tensor, vs, us, ti);
 
   cublasHandleCreate.join();
+  device_M_tensor_alloc_thread.join();
 
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
@@ -551,7 +556,7 @@ void winograd_convolution(
   // output_unpacking_store(Y, out, os, ti);
 
   // free(packed_filter);
-  free(packed_image);
+  cudaFreeHost(packed_image);
   free(transformed_filter);
   free(U);
   free(V);

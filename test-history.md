@@ -232,7 +232,7 @@ Layer 14:  Elapse time 79.369704 ms. (  547.90 GFlops)
 Layer 15:  Elapse time 75.077693 ms. (  579.22 GFlops) 
 Total elapse time: 13.433495. (  167.12 GFlops) 
 ```
-### 在device上进行output_unpacking
+### 8 在device上进行output_unpacking
 ```
 Layer 0 :  Elapse time 1507.894675 ms. (    7.23 GFlops) 
 Layer 1 :  Elapse time 2647.610664 ms. (   87.83 GFlops) 
@@ -251,4 +251,25 @@ Layer 13:  Elapse time 65.590620 ms. (  663.00 GFlops)
 Layer 14:  Elapse time 66.000700 ms. (  658.88 GFlops) 
 Layer 15:  Elapse time 60.832024 ms. (  714.86 GFlops) 
 Total elapse time: 9.516287. (  235.91 GFlops) 
+```
+
+### 9 使用cudaHostAlloc()和cudaHostGetDevicePointer()处理packed_image
+```
+Layer 0 :  Elapse time 1329.838037 ms. (    8.20 GFlops) 
+Layer 1 :  Elapse time 1901.472648 ms. (  122.30 GFlops) 
+Layer 2 :  Elapse time 710.987965 ms. (  160.61 GFlops) 
+Layer 3 :  Elapse time 989.209970 ms. (  230.87 GFlops) 
+Layer 4 :  Elapse time 366.516987 ms. (  300.33 GFlops) 
+Layer 5 :  Elapse time 533.113639 ms. (  412.95 GFlops) 
+Layer 6 :  Elapse time 534.340302 ms. (  412.00 GFlops) 
+Layer 7 :  Elapse time 533.324321 ms. (  412.79 GFlops) 
+Layer 8 :  Elapse time 228.515069 ms. (  446.68 GFlops) 
+Layer 9 :  Elapse time 309.005340 ms. (  660.65 GFlops) 
+Layer 10:  Elapse time 308.699369 ms. (  661.31 GFlops) 
+Layer 11:  Elapse time 310.138305 ms. (  658.24 GFlops) 
+Layer 12:  Elapse time 57.237705 ms. (  759.75 GFlops) 
+Layer 13:  Elapse time 67.476988 ms. (  644.46 GFlops) 
+Layer 14:  Elapse time 50.674995 ms. (  858.15 GFlops) 
+Layer 15:  Elapse time 50.034046 ms. (  869.14 GFlops) 
+Total elapse time: 8.280586. (  271.12 GFlops) 
 ```
