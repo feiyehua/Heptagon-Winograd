@@ -3,6 +3,7 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
 
+#include "device_memory_pool.h"
 #include "utils.h"
 __host__ void device_filter_transform(float *__restrict__ packed_filter,
                                       float *__restrict__ U,
@@ -10,7 +11,8 @@ __host__ void device_filter_transform(float *__restrict__ packed_filter,
                                       const U_shape_t us,
                                       const int64_t collapsed_dim_size,
                                       float **device_U_tensor,
-                                      int *ldu);
+                                      int *ldu,
+                                      Device_Memory_Pool& device_Memory_Pool);
 __global__ void thread_filter_transform(float *__restrict__ packed_filter,
                                         float *__restrict__ U,
                                         float *__restrict__ packed_U,

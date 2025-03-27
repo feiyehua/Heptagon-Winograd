@@ -211,3 +211,24 @@ Layer 14:  Elapse time 90.542634 ms. (  480.29 GFlops)
 Layer 15:  Elapse time 91.135343 ms. (  477.16 GFlops) 
 Total elapse time: 14.370047. (  156.23 GFlops) 
 ```
+
+### 7 重用cublas句柄、并行释放device memory
+```
+Layer 0 :  Elapse time 2687.819640 ms. (    4.06 GFlops) 
+Layer 1 :  Elapse time 3814.441681 ms. (   60.97 GFlops) 
+Layer 2 :  Elapse time 1278.712670 ms. (   89.30 GFlops) 
+Layer 3 :  Elapse time 1443.269332 ms. (  158.24 GFlops) 
+Layer 4 :  Elapse time 582.054615 ms. (  189.12 GFlops) 
+Layer 5 :  Elapse time 673.742374 ms. (  326.76 GFlops) 
+Layer 6 :  Elapse time 663.888693 ms. (  331.61 GFlops) 
+Layer 7 :  Elapse time 667.628288 ms. (  329.75 GFlops) 
+Layer 8 :  Elapse time 294.077714 ms. (  347.09 GFlops) 
+Layer 9 :  Elapse time 337.957382 ms. (  604.06 GFlops) 
+Layer 10:  Elapse time 340.071360 ms. (  600.30 GFlops) 
+Layer 11:  Elapse time 335.350355 ms. (  608.75 GFlops) 
+Layer 12:  Elapse time 82.052708 ms. (  529.98 GFlops) 
+Layer 13:  Elapse time 77.980359 ms. (  557.66 GFlops) 
+Layer 14:  Elapse time 79.369704 ms. (  547.90 GFlops) 
+Layer 15:  Elapse time 75.077693 ms. (  579.22 GFlops) 
+Total elapse time: 13.433495. (  167.12 GFlops) 
+```

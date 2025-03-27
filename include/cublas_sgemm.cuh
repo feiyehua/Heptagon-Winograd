@@ -4,7 +4,8 @@
 
 #include "utils.h"
 
-void cublas_sgemm(float* a,
+void cublas_sgemm(cublasHandle_t handle,
+                  float* a,
                   int lda,
                   float* b,
                   int ldb,

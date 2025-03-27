@@ -1,8 +1,10 @@
 #include <cublas_v2.h>
 #include <stdio.h>
+
 #include "utils.h"
 
-void cublas_sgemm(float* a,
+void cublas_sgemm(cublasHandle_t handle,
+                  float* a,
                   int lda,
                   float* b,
                   int ldb,
@@ -20,27 +22,11 @@ void cublas_sgemm(float* a,
   // cudaMalloc3D(&device_M_tensor, device_M_tensor_extent);
   const float alpha = 1.f;
   const float beta = 0.f;
-  cublasHandle_t handle;
-  cublasCreate(&handle);
   cublasOperation_t transa = CUBLAS_OP_T;
   cublasOperation_t transb = CUBLAS_OP_N;
 
-  auto err=cublasSgemm(handle,
-              transa,
-              transb,
-              n,
-              m,
-              k,
-              &alpha,
-              b,
-              ldb,
-              a,
-              lda,
-              &beta,
-              c,
-              ldc);
+  auto err = cublasSgemm(handle, transa, transb, n, m, k, &alpha, b, ldb, a, lda, &beta, c, ldc);
   cudaDeviceSynchronize();
-  cublasDestroy(handle);
   // cudaFree(a);
   // cudaFree(b);
   // printf("%d", err);

@@ -198,7 +198,8 @@ void device_image_transform(float *__restrict__ packed_image,
                             const tiling_info_t ti,
                             const V_shape_t vs,
                             float **V_tensor,
-                            int *ldv) {
+                            int *ldv,
+                            Device_Memory_Pool &device_Memory_Pool) {
   //分配device_packed_image内存
   cudaPitchedPtr device_packed_image;
   cudaExtent device_packed_image_extent = make_cudaExtent(
@@ -226,7 +227,8 @@ void device_image_transform(float *__restrict__ packed_image,
   cudaDeviceSynchronize();
 
   //释放内存，将结果拷贝回主机
-  cudaFree(device_packed_image.ptr);
+  device_Memory_Pool.free(device_packed_image.ptr);
+  // cudaFree(device_packed_image.ptr);
   // cudaMemcpy3DParms device_V_copy_parms = {0};
   // device_V_copy_parms.srcPtr = device_V_tensor;
   // device_V_copy_parms.dstPtr.ptr = V;

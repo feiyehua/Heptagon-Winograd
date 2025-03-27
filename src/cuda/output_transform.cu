@@ -117,7 +117,8 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,  // input tensor
                              const tiling_info_t ti,
                              const int64_t collapsed_dim_size,
                              const U_shape_t us,
-                             const V_shape_t vs) {
+                             const V_shape_t vs,
+                             Device_Memory_Pool& device_Memory_Pool) {
   // 将M_tensor拷贝到GPU内存上
   // cudaMemcpy3DParms device_M_tensor_copy_parms = {0};
   // device_M_tensor_copy_parms.srcPtr.ptr = M;
@@ -152,6 +153,8 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,  // input tensor
   cudaMemcpy3D(&host_Y_tensor_copy_parms);
 
   //
-  cudaFree(device_Y_tensor.ptr);
-  cudaFree(device_M_tensor.ptr);
+  device_Memory_Pool.free(device_Y_tensor.ptr);
+  device_Memory_Pool.free(device_M_tensor.ptr);
+  // cudaFree(device_Y_tensor.ptr);
+  // cudaFree(device_M_tensor.ptr);
 }

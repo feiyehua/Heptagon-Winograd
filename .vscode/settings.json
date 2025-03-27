@@ -43,7 +43,10 @@
         "__verbose_abort": "cpp",
         "ios": "cpp",
         "iostream": "cpp",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "__split_buffer": "cpp",
+        "deque": "cpp",
+        "vector": "cpp"
     },
     "C_Cpp.formatting": "clangFormat",
     "editor.formatOnPaste": true,

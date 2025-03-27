@@ -1,3 +1,4 @@
+#include <cublas_v2.h>
 #include <cuda_runtime.h>
 
 #include <cassert>
@@ -7,13 +8,13 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-
+#include <thread>
 #include "cublas_sgemm.cuh"
+#include "device_memory_pool.h"
 #include "filter_transform.cuh"
 #include "image_transform.cuh"
 #include "output_transform.cuh"
 #include "utils.h"
-
 // get V tensor = BT*d*B
 void image_transform(float *__restrict__ packed_image,
                      float *__restrict__ V,
@@ -453,6 +454,7 @@ void winograd_convolution(
   std::chrono::system_clock::time_point start;
   std::chrono::system_clock::time_point end;
   std::chrono::milliseconds duration;
+  Device_Memory_Pool device_Memory_Pool;
   /* new vars of shape */
   // image shape
   const image_shape_t is = {.bs = batch_num, .ic = input_channel_num, .h = image_height, .w = image_width};
@@ -481,7 +483,7 @@ void winograd_convolution(
   //进行两次变换
   float *device_U_tensor = NULL;
   int ldu = 0;
-  device_filter_transform(filter, U, fs, us, us.oc * us.ic, &device_U_tensor, &ldu);
+  device_filter_transform(filter, U, fs, us, us.oc * us.ic, &device_U_tensor, &ldu, device_Memory_Pool);
 
   // filter_transform(filter, transformed_filter, fs, us, us.oc * us.ic);
   // filter_packing(transformed_filter, U, us);
@@ -491,14 +493,18 @@ void winograd_convolution(
   float *device_V_tensor;
   int ldv = 0;
   image_packing(image, packed_image, is, ti);
-  device_image_transform(packed_image, V, is, ti, vs, &device_V_tensor, &ldv);
+  device_image_transform(packed_image, V, is, ti, vs, &device_V_tensor, &ldv, device_Memory_Pool);
   // 425ms
   // image_transform(packed_image, V, vs, ti, vs.ic * vs.num_tiles);
   // ti.tile_in_h = ti.tile_in_w = 6
   // #pragma omp parallel for collapse(2)
   cudaPitchedPtr device_M_tensor;
   alloc_M_Tensor_Memory(device_M_tensor, vs, us, ti);
+  cublasHandle_t handle;
+  cublasCreate(&handle);
 
+  
+  std::cout << "Function took " << duration.count() << " milliseconds to execute." << std::endl;
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
       // 定义出U V M Tensor指针
@@ -510,7 +516,8 @@ void winograd_convolution(
       V_tensor_t V_tensor = (V_tensor_t)device_V_tensor;
       M_tensor_t M_tensor = (M_tensor_t)device_M_tensor.ptr;
       // 90ms
-      cublas_sgemm((float *)U_tensor[h][w],
+      cublas_sgemm(handle,
+                   (float *)U_tensor[h][w],
                    us.ic,
                    (float *)V_tensor[h][w],
                    vs.ic,
@@ -530,10 +537,13 @@ void winograd_convolution(
       //       (float *)(M_tensor[h][w]));
     }
   }
-  cudaFree(device_U_tensor);
-  cudaFree(device_V_tensor);
+  cublasDestroy(handle);
+  device_Memory_Pool.free(device_U_tensor);
+  device_Memory_Pool.free(device_V_tensor);
+  // cudaFree(device_U_tensor);
+  // cudaFree(device_V_tensor);
   // 6000ms
-  device_output_transform(device_M_tensor, Y, ti, us.oc * vs.num_tiles, us, vs);
+  device_output_transform(device_M_tensor, Y, ti, us.oc * vs.num_tiles, us, vs, device_Memory_Pool);
   // output_transform(M, Y, ti, us.oc * vs.num_tiles);
   // 5000ms
   output_unpacking_store(Y, out, os, ti);

@@ -3,6 +3,7 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
 
+#include "device_memory_pool.h"
 #include "utils.h"
 
 __device__ inline tile_index_t device_get_tile_index(int64_t tile, tiling_info_t ts);
@@ -18,5 +19,6 @@ void device_image_transform(float *__restrict__ image,
                             const tiling_info_t ti,
                             const V_shape_t vs,
                             float **V_tensor,
-                            int *idv);
+                            int *idv,
+                            Device_Memory_Pool& device_Memory_Pool);
 #endif
