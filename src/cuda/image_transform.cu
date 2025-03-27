@@ -216,7 +216,6 @@ void device_image_transform(float *__restrict__ packed_image,
   device_packed_image_copy_parms.kind = cudaMemcpyHostToDevice;
   cudaMemcpy3D(&device_packed_image_copy_parms);
 
-
   //分配V_tensor内存
   cudaExtent V_tensor_extent = make_cudaExtent(
       sizeof(float) * vs.ic * vs.num_tiles, ti.tile_in_w, ti.tile_in_h);
@@ -239,6 +238,6 @@ void device_image_transform(float *__restrict__ packed_image,
   // cudaMemcpy3D(&device_V_copy_parms);
   // cudaFree(device_V_tensor.ptr);
 
-  *V_tensor = (float*)device_V_tensor.ptr;
-  *ldv = device_V_tensor.pitch / (sizeof(float)*vs.num_tiles);
+  *V_tensor = (float *)device_V_tensor.ptr;
+  *ldv = device_V_tensor.pitch / (sizeof(float));
 }

@@ -503,8 +503,8 @@ void winograd_convolution(
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
       // 定义出U V M Tensor指针
       typedef float(*U_tensor_t)[ti.tile_in_w][us.oc][ldu];
-      typedef float(*V_tensor_t)[ti.tile_in_w][vs.num_tiles][ldv];
-      typedef float(*M_tensor_t)[ti.tile_in_w][us.oc][device_M_tensor.pitch / us.oc / sizeof(float)];
+      typedef float(*V_tensor_t)[ti.tile_in_w][ldv];
+      typedef float(*M_tensor_t)[ti.tile_in_w][device_M_tensor.pitch / sizeof(float)];
       // 每次循环的时候都会定义一遍？不过估计会被编译器优化掉
       U_tensor_t U_tensor = (U_tensor_t)device_U_tensor;
       V_tensor_t V_tensor = (V_tensor_t)device_V_tensor;
