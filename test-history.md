@@ -232,3 +232,23 @@ Layer 14:  Elapse time 79.369704 ms. (  547.90 GFlops)
 Layer 15:  Elapse time 75.077693 ms. (  579.22 GFlops) 
 Total elapse time: 13.433495. (  167.12 GFlops) 
 ```
+### 在device上进行output_unpacking
+```
+Layer 0 :  Elapse time 1507.894675 ms. (    7.23 GFlops) 
+Layer 1 :  Elapse time 2647.610664 ms. (   87.83 GFlops) 
+Layer 2 :  Elapse time 830.993970 ms. (  137.41 GFlops) 
+Layer 3 :  Elapse time 1022.726297 ms. (  223.30 GFlops) 
+Layer 4 :  Elapse time 410.699288 ms. (  268.02 GFlops) 
+Layer 5 :  Elapse time 567.717393 ms. (  387.78 GFlops) 
+Layer 6 :  Elapse time 547.333956 ms. (  402.22 GFlops) 
+Layer 7 :  Elapse time 545.069297 ms. (  403.89 GFlops) 
+Layer 8 :  Elapse time 249.289672 ms. (  409.45 GFlops) 
+Layer 9 :  Elapse time 306.940317 ms. (  665.10 GFlops) 
+Layer 10:  Elapse time 307.230393 ms. (  664.47 GFlops) 
+Layer 11:  Elapse time 306.181351 ms. (  666.75 GFlops) 
+Layer 12:  Elapse time 74.176709 ms. (  586.26 GFlops) 
+Layer 13:  Elapse time 65.590620 ms. (  663.00 GFlops) 
+Layer 14:  Elapse time 66.000700 ms. (  658.88 GFlops) 
+Layer 15:  Elapse time 60.832024 ms. (  714.86 GFlops) 
+Total elapse time: 9.516287. (  235.91 GFlops) 
+```

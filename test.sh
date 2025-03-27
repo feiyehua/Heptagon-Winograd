@@ -15,5 +15,6 @@ case $choice in
 2) sbatch ./slurm_scripts/timer.sh ;;
 3) sbatch ./slurm_scripts/verify.sh ;;
 4) sbatch ./slurm_scripts/small_verify.sh ;;
+5) sbatch ./slurm_scripts/memory.sh ;;
 *) echo "Invalid choice, please try again." ;;
 esac

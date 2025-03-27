@@ -18,5 +18,6 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,  // input tensor
                              const int64_t collapsed_dim_size,
                              const U_shape_t us,
                              const V_shape_t vs,
-                             Device_Memory_Pool& device_Memory_Pool);
+                             const out_shape_t os,
+                            Device_Memory_Pool& device_Memory_Pool);
 #endif

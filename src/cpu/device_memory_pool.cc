@@ -13,4 +13,7 @@ Device_Memory_Pool::~Device_Memory_Pool() {
   }
 }
 
-void Device_Memory_Pool::free(void* ptr) { this->memory_free_queue.push(thread(cudaFree, ptr)); }
+void Device_Memory_Pool::free(void* ptr) {
+  cudaFree(ptr);
+  // this->memory_free_queue.push(thread(cudaFree, ptr));
+  }
