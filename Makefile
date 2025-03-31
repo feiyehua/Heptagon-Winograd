@@ -24,7 +24,7 @@ CUDA_OBJECTS := $(patsubst src/cuda/%.cu, $(BUILD_DIR)/%.o, $(CUDA_SOURCES))
 all: winograd
 
 winograd: $(CUDA_OBJECTS) $(CPU_OBJECTS) $(BUILD_DIR)/driver.o
-	nvcc -o $@ $^ -Xcompiler -fopenmp -lcublas
+	nvcc -o $@ $^ -Xcompiler -fopenmp -lcublas -arch=sm_70
 
 $(BUILD_DIR)/%.o: $(SRC_CUDA)/%.cu
 	nvcc -c $< $(NVCCFLAGS) -o $@
