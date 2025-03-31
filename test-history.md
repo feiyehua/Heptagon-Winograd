@@ -273,3 +273,24 @@ Layer 14:  Elapse time 50.674995 ms. (  858.15 GFlops)
 Layer 15:  Elapse time 50.034046 ms. (  869.14 GFlops) 
 Total elapse time: 8.280586. (  271.12 GFlops) 
 ```
+### 10 重复使用已经分配过的内存
+`
+Layer 0 :  Elapse time 3522.809664 ms. (    3.09 GFlops) 
+Layer 1 :  Elapse time 1667.764346 ms. (  139.44 GFlops) 
+Layer 2 :  Elapse time 680.066029 ms. (  167.91 GFlops) 
+Layer 3 :  Elapse time 665.930986 ms. (  342.95 GFlops) 
+Layer 4 :  Elapse time 317.683379 ms. (  346.49 GFlops) 
+Layer 5 :  Elapse time 334.013303 ms. (  659.11 GFlops) 
+Layer 6 :  Elapse time 332.919041 ms. (  661.27 GFlops) 
+Layer 7 :  Elapse time 326.588710 ms. (  674.09 GFlops) 
+Layer 8 :  Elapse time 168.953975 ms. (  604.14 GFlops) 
+Layer 9 :  Elapse time 211.095651 ms. (  967.07 GFlops) 
+Layer 10:  Elapse time 210.851669 ms. (  968.19 GFlops) 
+Layer 11:  Elapse time 210.443974 ms. (  970.07 GFlops) 
+Layer 12:  Elapse time 45.277675 ms. (  960.44 GFlops) 
+Layer 13:  Elapse time 43.272336 ms. ( 1004.95 GFlops) 
+Layer 14:  Elapse time 40.895065 ms. ( 1063.37 GFlops) 
+Layer 15:  Elapse time 40.778399 ms. ( 1066.41 GFlops) 
+Total elapse time: 8.819344. (  254.55 GFlops) 
+`
+由于内存尺寸较大，第一次分配所用时间较长。不过对于后续计算，速度提升明显。

@@ -466,9 +466,10 @@ void winograd_convolution(
   static float *packed_image;
   // cublasCreate(&handle);
   if (!initialized) {
-    std::thread tmp(cublasCreate, &handle);
-    std::swap(tmp, cublasHandleCreate);
+    std::thread tmp1(cublasCreate, &handle);
+    std::swap(tmp1, cublasHandleCreate);
     std::thread tmp2(cudaHostMalloc, &packed_image, (size_t)20000000000, cudaHostAllocMapped);  // 20000000000
+    // alloc enough memory to store packed_image and out tensor
     std::swap(tmp2, cudaHostMallocThread);
     // cudaHostAlloc(
     //   &packed_image, sizeof(float) * ti.tile_in_h * ti.tile_in_w * ti.num_tiles * is.ic,
