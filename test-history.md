@@ -294,3 +294,24 @@ Layer 15:  Elapse time 40.778399 ms. ( 1066.41 GFlops)
 Total elapse time: 8.819344. (  254.55 GFlops) 
 `
 由于内存尺寸较大，第一次分配所用时间较长。不过对于后续计算，速度提升明显。
+
+### 在处理输出数组时，也使用不可分页内存
+`
+Layer 0 :  Elapse time 3405.299346 ms. (    3.20 GFlops) 
+Layer 1 :  Elapse time 1489.663045 ms. (  156.11 GFlops) 
+Layer 2 :  Elapse time 617.351691 ms. (  184.97 GFlops) 
+Layer 3 :  Elapse time 730.218331 ms. (  312.76 GFlops) 
+Layer 4 :  Elapse time 275.264343 ms. (  399.89 GFlops) 
+Layer 5 :  Elapse time 346.375942 ms. (  635.58 GFlops) 
+Layer 6 :  Elapse time 350.921075 ms. (  627.35 GFlops) 
+Layer 7 :  Elapse time 348.791361 ms. (  631.18 GFlops) 
+Layer 8 :  Elapse time 192.819357 ms. (  529.37 GFlops) 
+Layer 9 :  Elapse time 218.062003 ms. (  936.18 GFlops) 
+Layer 10:  Elapse time 217.479626 ms. (  938.69 GFlops) 
+Layer 11:  Elapse time 212.282022 ms. (  961.67 GFlops) 
+Layer 12:  Elapse time 34.403404 ms. ( 1264.02 GFlops) 
+Layer 13:  Elapse time 36.584695 ms. ( 1188.65 GFlops) 
+Layer 14:  Elapse time 35.926660 ms. ( 1210.43 GFlops) 
+Layer 15:  Elapse time 35.617669 ms. ( 1220.93 GFlops) 
+Total elapse time: 8.547061. (  262.66 GFlops) 
+`
