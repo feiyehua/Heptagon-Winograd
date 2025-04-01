@@ -498,16 +498,11 @@ void winograd_convolution(
   //  float *packed_filter = (float *)malloc(sizeof(float) * fs.h * fs.w * fs.oc * fs.ic);
 
   //  = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * ti.num_tiles * is.ic);
-  float *U = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * us.oc * us.ic);
-  float *transformed_filter = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * us.oc * us.ic);
-  float *V = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * vs.num_tiles * vs.ic);
-  float *M = (float *)malloc(sizeof(float) * ti.tile_in_h * ti.tile_in_w * us.oc * vs.num_tiles);
-  float *Y = (float *)malloc(sizeof(float) * ti.tile_out_h * ti.tile_in_w * os.oc * ti.num_tiles);
 
   //进行两次变换
   float *device_U_tensor = NULL;
   int ldu = 0;
-  device_filter_transform(filter, U, fs, us, us.oc * us.ic, &device_U_tensor, &ldu, device_Memory_Pool);
+  device_filter_transform(filter, fs, us, us.oc * us.ic, &device_U_tensor, &ldu, device_Memory_Pool);
 
   // filter_transform(filter, transformed_filter, fs, us, us.oc * us.ic);
   // filter_packing(transformed_filter, U, us);
@@ -524,7 +519,7 @@ void winograd_convolution(
   cudaHostGetDevicePointer(&device_out_tensor, packed_image, 0);
   device_out_tensor += ti.tile_in_h * ti.tile_in_w * ti.num_tiles * is.ic;
   image_packing(image, packed_image, is, ti);
-  device_image_transform(packed_image, V, is, ti, vs, &device_V_tensor, &ldv, device_Memory_Pool);
+  device_image_transform(packed_image, is, ti, vs, &device_V_tensor, &ldv, device_Memory_Pool);
 
   // cudaFreeHost(packed_image);
   // 425ms
@@ -571,13 +566,13 @@ void winograd_convolution(
     }
   }
   // cublasDestroy(handle);
-  device_Memory_Pool.free(device_U_tensor);
-  device_Memory_Pool.free(device_V_tensor);
+  cudaFree(device_U_tensor);
+  cudaFree(device_V_tensor);
   // cudaFree(device_U_tensor);
   // cudaFree(device_V_tensor);
   // 6000ms
   device_output_transform(
-      device_M_tensor, device_out_tensor,out, ti, us.oc * vs.num_tiles, us, vs, os, device_Memory_Pool);
+      device_M_tensor, device_out_tensor, out, ti, us.oc * vs.num_tiles, us, vs, os, device_Memory_Pool);
   // output_transform(M, Y, ti, us.oc * vs.num_tiles);
   // 5000ms
   // output_unpacking_store(Y, out, os, ti);
@@ -585,9 +580,4 @@ void winograd_convolution(
   // memcpy(out, host_out_tensor, sizeof(float) * os.bs * os.oc * os.h * os.w);
   // free(packed_filter);
   // cudaFreeHost(packed_image);
-  free(transformed_filter);
-  free(U);
-  free(V);
-  free(M);
-  free(Y);
 }

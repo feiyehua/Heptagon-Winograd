@@ -193,7 +193,7 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,         // input te
 
   device_output_unpacking_store<<<DIV_UP(os.oc * ti.num_tiles, 1024), 1024>>>(
       device_Y_tensor, device_out_tensor, os, ti);
-  device_Memory_Pool.free(device_M_tensor.ptr);
+  cudaFree(device_M_tensor.ptr);
   cudaDeviceSynchronize();
 
   // 将Y_tensor复制回host
@@ -210,7 +210,7 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,         // input te
       sizeof(float) * os.w, os.h, os.oc * os.bs);  // device_out_tensor_extent;  //
   host_out_tensor_copy_parms.kind = cudaMemcpyHostToHost;
   cudaMemcpy3D(&host_out_tensor_copy_parms);
-  device_Memory_Pool.free(device_Y_tensor.ptr);
+  cudaFree(device_Y_tensor.ptr);
   // device_Memory_Pool.free(device_out_tensor.ptr);
   // cudaFree(device_Y_tensor.ptr);
   // cudaFree(device_M_tensor.ptr);

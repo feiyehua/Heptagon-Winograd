@@ -3,13 +3,13 @@
 __host__ void device_filter_transform(
     // collapsed_dim_size = us.oc * us.ic = fs.oc * fs.ic
     float *__restrict__ packed_filter,  //  packed_filter collapsed_dim_size*fs.h*fs.w
-    float *__restrict__ U,              // collapsed_dim_size*us.h*us.w
+                                        // collapsed_dim_size*us.h*us.w
     const filter_shape_t fs,
     const U_shape_t us,
     const int64_t collapsed_dim_size,
     float **device_U_tensor,
     int *ldu,
-    Device_Memory_Pool& device_Memory_Pool) {
+    Device_Memory_Pool &device_Memory_Pool) {
   float *__restrict__ device_filter;
   float *__restrict__ device_U;
   float *__restrict__ device_packed_U;
