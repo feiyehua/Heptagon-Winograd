@@ -520,6 +520,7 @@ void winograd_convolution(
     cudaHostMallocThread.join();
   }
   float *host_out_tensor = packed_image + ti.tile_in_h * ti.tile_in_w * ti.num_tiles * is.ic;
+  printf("%lx", ti.tile_in_h * ti.tile_in_w * ti.num_tiles * is.ic);
   float *device_out_tensor;
   cudaHostGetDevicePointer(&device_out_tensor, packed_image, 0);
   device_out_tensor += ti.tile_in_h * ti.tile_in_w * ti.num_tiles * is.ic;

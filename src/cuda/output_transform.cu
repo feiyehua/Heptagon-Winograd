@@ -113,6 +113,9 @@ __global__ void output_transform(cudaPitchedPtr M,  // input tensor
     Y_tensor[h * Y_tensor_z + 3 + idx * Y_tensor_yz] = z3;
   }
 }
+
+#define FETCH_FLOAT4(float_var) (reinterpret_cast<float4*>(&(float_var))[0])
+
 __global__ void device_output_unpacking_store(cudaPitchedPtr device_Y_tensor,
                                               float* __restrict__ device_out_tensor,
                                               const out_shape_t os,
@@ -135,25 +138,26 @@ __global__ void device_output_unpacking_store(cudaPitchedPtr device_Y_tensor,
   float tmp[TILE_OUT_H][TILE_OUT_W];
   if (batch >= os.bs) return;
 #pragma unroll
-  for (int64_t h = 0; h < ti.tile_out_h; ++h) {
+  for (int64_t h = 0; h < min(ti.tile_out_h, os.h - 4 * hh); ++h) {
 #pragma unroll
-    for (int64_t w = 0; w < ti.tile_out_w; ++w) {
+    for (int64_t w = 0; w < min(ti.tile_out_w, os.h - 4 * ww); ++w) {
       {
         if (hh * 4 + h < os.h && ww * 4 + w < os.w)
-        // out_tensor[(batch * os.oc + oc) * out_tensor_yz + (hh * 4 + h) * out_tensor_z +
-        //            (ww * 4 + w)] = Y_tensor[(oc * ti.num_tiles + tile) * Y_tensor_yz + h * Y_tensor_z + w];
-        tmp[h][w] = Y_tensor[(oc * ti.num_tiles + tile) * Y_tensor_yz + h * Y_tensor_z + w];
+          out_tensor[(batch * os.oc + oc) * out_tensor_yz + (hh * 4 + h) * out_tensor_z +
+                     (ww * 4 + w)] = Y_tensor[(oc * ti.num_tiles + tile) * Y_tensor_yz + h * Y_tensor_z + w];
+        // tmp[h][w] = Y_tensor[(oc * ti.num_tiles + tile) * Y_tensor_yz + h * Y_tensor_z + w];
       }
     }
   }
-  cudaMemcpy2DAsync(out_tensor + (batch * os.oc + oc) * out_tensor_yz + (hh * 4) * out_tensor_z + ww * 4,
-                    os.w * sizeof(float),
-                    tmp,
-                    TILE_OUT_W * sizeof(float),
-                    min(TILE_OUT_W, os.w - ww * 4) * sizeof(float),
-                    min(TILE_OUT_H, os.h - hh * 4),
-                    cudaMemcpyDeviceToHost,
-                    0);
+  // assert(tmp[1][1] != 0);
+  // cudaMemcpy2DAsync(out_tensor + (batch * os.oc + oc) * out_tensor_yz + (hh * 4) * out_tensor_z + ww * 4,
+  //                   os.w * sizeof(float),
+  //                   tmp,
+  //                   TILE_OUT_W * sizeof(float),
+  //                   min(TILE_OUT_W, os.w - ww * 4) * sizeof(float),
+  //                   min(TILE_OUT_H, os.h - hh * 4),
+  //                   cudaMemcpyDeviceToHost,
+  //                   0);
 }
 
 void alloc_M_Tensor_Memory(cudaPitchedPtr& M_tensor, V_shape_t vs, U_shape_t us, tiling_info_t ti) {

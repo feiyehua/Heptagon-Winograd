@@ -1,6 +1,6 @@
 # Compiler flags
 CFLAGS = -O4 -g -std=c++11 -fopenmp -I./include -I/usr/local/cuda/include
-NVCCFLAGS = -O4 -g -rdc=true -std=c++11 -I./include -arch=sm_70
+NVCCFLAGS = -O4 -g -rdc=true -Xptxas -v -std=c++11 -I./include -arch=sm_70
 
 # Directories
 SRC_CUDA = src/cuda
@@ -24,7 +24,7 @@ CUDA_OBJECTS := $(patsubst src/cuda/%.cu, $(BUILD_DIR)/%.o, $(CUDA_SOURCES))
 all: winograd
 
 winograd: $(CUDA_OBJECTS) $(CPU_OBJECTS) $(BUILD_DIR)/driver.o
-	nvcc -o $@ $^ -Xcompiler -fopenmp -lcublas -arch=sm_70
+	nvcc -o $@ $^ -Xptxas -v -Xcompiler -fopenmp -lcublas -arch=sm_70
 
 $(BUILD_DIR)/%.o: $(SRC_CUDA)/%.cu
 	nvcc -c $< $(NVCCFLAGS) -o $@
