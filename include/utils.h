@@ -22,6 +22,8 @@
 #define DIV(A, B) ((A) / (B))
 #define DIV_UP(A, B) (((A) + (B)-1) / (B))
 
+#define FETCH_FLOAT4(float_var) (reinterpret_cast<float4*>(&(float_var))[0])
+
 /**
  * @brief Structure representing tile indices.
  */

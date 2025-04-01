@@ -14,6 +14,7 @@ void alloc_M_Tensor_Memory(cudaPitchedPtr& M_tensor, V_shape_t vs, U_shape_t us,
 
 void device_output_transform(cudaPitchedPtr device_M_tensor,  // input tensor
                              float* __restrict__ Y,           // output tensor
+                             float* __restrict__ out,
                              const tiling_info_t ti,
                              const int64_t collapsed_dim_size,
                              const U_shape_t us,

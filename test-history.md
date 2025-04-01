@@ -273,6 +273,7 @@ Layer 14:  Elapse time 50.674995 ms. (  858.15 GFlops)
 Layer 15:  Elapse time 50.034046 ms. (  869.14 GFlops) 
 Total elapse time: 8.280586. (  271.12 GFlops) 
 ```
+
 ### 10 重复使用已经分配过的内存
 `
 Layer 0 :  Elapse time 3522.809664 ms. (    3.09 GFlops) 
@@ -295,23 +296,24 @@ Total elapse time: 8.819344. (  254.55 GFlops)
 `
 由于内存尺寸较大，第一次分配所用时间较长。不过对于后续计算，速度提升明显。
 
-### 在处理输出数组时，也使用不可分页内存
+### 在处理输出数组时，也使用不可分页内存，并一同使用float4进行向量化操作
 `
-Layer 0 :  Elapse time 3405.299346 ms. (    3.20 GFlops) 
-Layer 1 :  Elapse time 1489.663045 ms. (  156.11 GFlops) 
-Layer 2 :  Elapse time 617.351691 ms. (  184.97 GFlops) 
-Layer 3 :  Elapse time 730.218331 ms. (  312.76 GFlops) 
-Layer 4 :  Elapse time 275.264343 ms. (  399.89 GFlops) 
-Layer 5 :  Elapse time 346.375942 ms. (  635.58 GFlops) 
-Layer 6 :  Elapse time 350.921075 ms. (  627.35 GFlops) 
-Layer 7 :  Elapse time 348.791361 ms. (  631.18 GFlops) 
-Layer 8 :  Elapse time 192.819357 ms. (  529.37 GFlops) 
-Layer 9 :  Elapse time 218.062003 ms. (  936.18 GFlops) 
-Layer 10:  Elapse time 217.479626 ms. (  938.69 GFlops) 
-Layer 11:  Elapse time 212.282022 ms. (  961.67 GFlops) 
-Layer 12:  Elapse time 34.403404 ms. ( 1264.02 GFlops) 
-Layer 13:  Elapse time 36.584695 ms. ( 1188.65 GFlops) 
-Layer 14:  Elapse time 35.926660 ms. ( 1210.43 GFlops) 
-Layer 15:  Elapse time 35.617669 ms. ( 1220.93 GFlops) 
-Total elapse time: 8.547061. (  262.66 GFlops) 
+Layer 0 :  Elapse time 3386.732658 ms. (    3.22 GFlops) 
+Layer 1 :  Elapse time 1497.247696 ms. (  155.32 GFlops) 
+Layer 2 :  Elapse time 616.797288 ms. (  185.13 GFlops) 
+Layer 3 :  Elapse time 731.389602 ms. (  312.25 GFlops) 
+Layer 4 :  Elapse time 273.213704 ms. (  402.89 GFlops) 
+Layer 5 :  Elapse time 345.844666 ms. (  636.56 GFlops) 
+Layer 6 :  Elapse time 353.331327 ms. (  623.07 GFlops) 
+Layer 7 :  Elapse time 346.011400 ms. (  636.25 GFlops) 
+Layer 8 :  Elapse time 176.636616 ms. (  577.87 GFlops) 
+Layer 9 :  Elapse time 226.193349 ms. (  902.53 GFlops) 
+Layer 10:  Elapse time 219.209035 ms. (  931.28 GFlops) 
+Layer 11:  Elapse time 214.300315 ms. (  952.61 GFlops) 
+Layer 12:  Elapse time 34.377019 ms. ( 1264.99 GFlops) 
+Layer 13:  Elapse time 36.508004 ms. ( 1191.15 GFlops) 
+Layer 14:  Elapse time 35.447677 ms. ( 1226.78 GFlops) 
+Layer 15:  Elapse time 35.785357 ms. ( 1215.20 GFlops) 
+Total elapse time: 8.529026. (  263.22 GFlops) 
 `
+仅仅只是单独访问时，效果较差；不过使用float4进行向量化操作后有较好的效果。

@@ -577,24 +577,11 @@ void winograd_convolution(
   // cudaFree(device_V_tensor);
   // 6000ms
   device_output_transform(
-      device_M_tensor, device_out_tensor, ti, us.oc * vs.num_tiles, us, vs, os, device_Memory_Pool);
+      device_M_tensor, device_out_tensor,out, ti, us.oc * vs.num_tiles, us, vs, os, device_Memory_Pool);
   // output_transform(M, Y, ti, us.oc * vs.num_tiles);
   // 5000ms
   // output_unpacking_store(Y, out, os, ti);
 
-  cudaMemcpy3DParms host_out_tensor_copy_parms = {0};
-  host_out_tensor_copy_parms.srcPtr.ptr = device_out_tensor;
-  host_out_tensor_copy_parms.srcPtr.pitch = ROUND_UP(os.w, 4) * sizeof(float);
-  host_out_tensor_copy_parms.srcPtr.ysize = ROUND_UP(os.h, 4);
-  host_out_tensor_copy_parms.srcPtr.xsize = us.oc * os.bs;
-  host_out_tensor_copy_parms.dstPtr.ptr = out;
-  host_out_tensor_copy_parms.dstPtr.pitch = sizeof(float) * os.w;
-  host_out_tensor_copy_parms.dstPtr.ysize = os.h;
-  host_out_tensor_copy_parms.dstPtr.xsize = us.oc * os.bs;
-  host_out_tensor_copy_parms.extent = make_cudaExtent(
-      sizeof(float) * os.w, os.h, os.oc * os.bs);  // device_out_tensor_extent;  //
-  host_out_tensor_copy_parms.kind = cudaMemcpyHostToHost;
-  cudaMemcpy3D(&host_out_tensor_copy_parms);
   // memcpy(out, host_out_tensor, sizeof(float) * os.bs * os.oc * os.h * os.w);
   // free(packed_filter);
   // cudaFreeHost(packed_image);
