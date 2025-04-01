@@ -519,8 +519,14 @@ void winograd_convolution(
   if (cudaHostMallocThread.joinable()) {
     cudaHostMallocThread.join();
   }
+  float *host_out_tensor = packed_image + ti.tile_in_h * ti.tile_in_w * ti.num_tiles * is.ic;
+  float *device_out_tensor;
+  cudaHostGetDevicePointer(&device_out_tensor, packed_image, 0);
+  device_out_tensor += ti.tile_in_h * ti.tile_in_w * ti.num_tiles * is.ic;
   image_packing(image, packed_image, is, ti);
   device_image_transform(packed_image, V, is, ti, vs, &device_V_tensor, &ldv, device_Memory_Pool);
+
+  // cudaFreeHost(packed_image);
   // 425ms
   // image_transform(packed_image, V, vs, ti, vs.ic * vs.num_tiles);
   // ti.tile_in_h = ti.tile_in_w = 6
@@ -570,11 +576,12 @@ void winograd_convolution(
   // cudaFree(device_U_tensor);
   // cudaFree(device_V_tensor);
   // 6000ms
-  device_output_transform(device_M_tensor, out, ti, us.oc * vs.num_tiles, us, vs, os, device_Memory_Pool);
+  device_output_transform(
+      device_M_tensor, device_out_tensor, ti, us.oc * vs.num_tiles, us, vs, os, device_Memory_Pool);
   // output_transform(M, Y, ti, us.oc * vs.num_tiles);
   // 5000ms
   // output_unpacking_store(Y, out, os, ti);
-
+  memcpy(out, host_out_tensor, sizeof(float) * os.bs * os.oc * os.h * os.w);
   // free(packed_filter);
   // cudaFreeHost(packed_image);
   free(transformed_filter);

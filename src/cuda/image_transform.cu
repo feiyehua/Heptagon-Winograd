@@ -1,5 +1,8 @@
 #include "image_transform.cuh"
 
+void allocate_packed_image_memory(void** ptr, size_t size, unsigned int flags) {
+  cudaHostAlloc(ptr, size, flags);
+}
 // 计算某个tile对应的横纵坐标
 __device__ inline tile_index_t device_get_tile_index(int64_t tile, tiling_info_t ts) {
   tile_index_t ti;
@@ -47,7 +50,7 @@ __global__ void image_packing(const cudaPitchedPtr device_image,
   }
 }
 // get V tensor = BT*d*B
-__global__ void image_transform(float* __restrict__ device_packed_image,
+__global__ void image_transform(float *__restrict__ device_packed_image,
                                 const cudaPitchedPtr V,
                                 const V_shape_t vs,
                                 const tiling_info_t ti,
@@ -226,6 +229,7 @@ void device_image_transform(float *__restrict__ packed_image,
       sizeof(float) * vs.ic * vs.num_tiles, ti.tile_in_w, ti.tile_in_h);
   cudaPitchedPtr device_V_tensor;
   cudaMalloc3D(&device_V_tensor, V_tensor_extent);
+  // alloc_packed_image.join();
   image_transform<<<DIV_UP(vs.num_tiles * vs.ic, 1024), 1024>>>(
       device_packed_image, device_V_tensor, vs, ti, vs.ic * vs.num_tiles);
   cudaDeviceSynchronize();

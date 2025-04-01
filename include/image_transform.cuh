@@ -3,9 +3,12 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
 
+#include <thread>
+
 #include "device_memory_pool.h"
 #include "utils.h"
 
+void allocate_packed_image_memory(void **ptr, size_t size, unsigned int flags);
 __device__ inline tile_index_t device_get_tile_index(int64_t tile, tiling_info_t ts);
 
 __global__ void image_packing(const cudaPitchedPtr *device_image,
