@@ -496,7 +496,10 @@ void winograd_convolution(
   const V_shape_t vs = get_V_shape(is, ti);
 
   cudaPitchedPtr device_M_tensor;
-  std::thread device_M_tensor_alloc_thread(alloc_M_Tensor_Memory, std::ref(device_M_tensor), vs, us, ti);
+  cudaExtent device_M_tensor_extent = make_cudaExtent(
+      vs.num_tiles * sizeof(float) * us.oc, ti.tile_in_w, ti.tile_in_h);
+  device_Memory_Pool.poolMalloc3D(&device_M_tensor, device_M_tensor_extent);
+  // std::thread device_M_tensor_alloc_thread(alloc_M_Tensor_Memory, std::ref(device_M_tensor), vs, us, ti);
   // allocate memory
   //  float *packed_filter = (float *)malloc(sizeof(float) * fs.h * fs.w * fs.oc * fs.ic);
 
@@ -534,7 +537,7 @@ void winograd_convolution(
   if (cublasHandleCreate.joinable()) {
     cublasHandleCreate.join();
   }
-  device_M_tensor_alloc_thread.join();
+  // device_M_tensor_alloc_thread.join();
 
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
@@ -570,7 +573,7 @@ void winograd_convolution(
   }
   // cublasDestroy(handle);
   cudaFree(device_U_tensor);
-  cudaFree(device_V_tensor);
+  // cudaFree(device_V_tensor);
   // cudaFree(device_U_tensor);
   // cudaFree(device_V_tensor);
   // 6000ms

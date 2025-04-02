@@ -206,7 +206,7 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,         // input te
 
   device_output_unpacking_store<<<DIV_UP(os.oc * ti.num_tiles, 1024), 1024>>>(
       device_Y_tensor, device_out_tensor, os, ti);
-  cudaFree(device_M_tensor.ptr);
+  // cudaFree(device_M_tensor.ptr);
   cudaDeviceSynchronize();
 
   // 将Y_tensor复制回host

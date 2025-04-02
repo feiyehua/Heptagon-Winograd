@@ -227,7 +227,8 @@ void device_image_transform(float *__restrict__ packed_image,
   cudaExtent V_tensor_extent = make_cudaExtent(
       sizeof(float) * vs.ic * vs.num_tiles, ti.tile_in_w, ti.tile_in_h);
   cudaPitchedPtr device_V_tensor;
-  cudaMalloc3D(&device_V_tensor, V_tensor_extent);
+  device_Memory_Pool.poolMalloc3D(&device_V_tensor, V_tensor_extent);
+  // cudaMalloc3D(&device_V_tensor, V_tensor_extent);
   // device_Memory_Pool.poolMalloc3D(&device_V_tensor, V_tensor_extent);
   // alloc_packed_image.join();
   // printf("%ld\n", sizeof(float) * vs.ic * vs.num_tiles * ti.tile_in_w * ti.tile_in_h);
