@@ -468,7 +468,7 @@ void winograd_convolution(
   if (!initialized) {
     std::thread tmp1(cublasCreate, &handle);
     std::swap(tmp1, cublasHandleCreate);
-    std::thread tmp2(cudaHostMalloc, &packed_image, (size_t)20000000000, cudaHostAllocMapped);  // 20000000000
+    std::thread tmp2(cudaHostMalloc, &packed_image, (size_t)1<<(size_t)31, cudaHostAllocMapped);  // 20000000000
     // alloc enough memory to store packed_image and out tensor
     std::swap(tmp2, cudaHostMallocThread);
     // cudaHostAlloc(

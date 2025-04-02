@@ -296,7 +296,7 @@ Total elapse time: 8.819344. (  254.55 GFlops)
 `
 由于内存尺寸较大，第一次分配所用时间较长。不过对于后续计算，速度提升明显。
 
-### 在处理输出数组时，也使用不可分页内存，并一同使用float4进行向量化操作
+### 使用float4进行向量化操作
 `
 Layer 0 :  Elapse time 3386.732658 ms. (    3.22 GFlops) 
 Layer 1 :  Elapse time 1497.247696 ms. (  155.32 GFlops) 
@@ -316,4 +316,46 @@ Layer 14:  Elapse time 35.447677 ms. ( 1226.78 GFlops)
 Layer 15:  Elapse time 35.785357 ms. ( 1215.20 GFlops) 
 Total elapse time: 8.529026. (  263.22 GFlops) 
 `
-仅仅只是单独访问时，效果较差；不过使用float4进行向量化操作后有较好的效果。
+
+### 不重复使用内存，而是重复利用一片预先申请的内存
+`
+Layer 0 :  Elapse time 2752.175967 ms. (    3.96 GFlops) 
+Layer 1 :  Elapse time 872.197310 ms. (  266.63 GFlops) 
+Layer 2 :  Elapse time 342.701356 ms. (  333.21 GFlops) 
+Layer 3 :  Elapse time 477.219661 ms. (  478.56 GFlops) 
+Layer 4 :  Elapse time 204.270363 ms. (  538.87 GFlops) 
+Layer 5 :  Elapse time 271.559000 ms. (  810.69 GFlops) 
+Layer 6 :  Elapse time 271.550020 ms. (  810.72 GFlops) 
+Layer 7 :  Elapse time 271.502654 ms. (  810.86 GFlops) 
+Layer 8 :  Elapse time 139.375925 ms. (  732.35 GFlops) 
+Layer 9 :  Elapse time 175.503969 ms. ( 1163.19 GFlops) 
+Layer 10:  Elapse time 175.465663 ms. ( 1163.45 GFlops) 
+Layer 11:  Elapse time 175.499678 ms. ( 1163.22 GFlops) 
+Layer 12:  Elapse time 24.385373 ms. ( 1783.30 GFlops) 
+Layer 13:  Elapse time 20.622333 ms. ( 2108.71 GFlops) 
+Layer 14:  Elapse time 17.397642 ms. ( 2499.57 GFlops) 
+Layer 15:  Elapse time 17.552296 ms. ( 2477.54 GFlops) 
+Total elapse time: 6.208979. (  361.57 GFlops) 
+`
+
+### 调整预分配内存大小
+`
+Layer 0 :  Elapse time 689.964056 ms. (   15.80 GFlops) 
+Layer 1 :  Elapse time 861.095031 ms. (  270.06 GFlops) 
+Layer 2 :  Elapse time 338.151375 ms. (  337.69 GFlops) 
+Layer 3 :  Elapse time 471.062342 ms. (  484.82 GFlops) 
+Layer 4 :  Elapse time 202.661276 ms. (  543.15 GFlops) 
+Layer 5 :  Elapse time 268.489679 ms. (  819.96 GFlops) 
+Layer 6 :  Elapse time 268.658002 ms. (  819.45 GFlops) 
+Layer 7 :  Elapse time 268.642664 ms. (  819.49 GFlops) 
+Layer 8 :  Elapse time 138.609012 ms. (  736.41 GFlops) 
+Layer 9 :  Elapse time 173.876286 ms. ( 1174.08 GFlops) 
+Layer 10:  Elapse time 173.780362 ms. ( 1174.73 GFlops) 
+Layer 11:  Elapse time 173.762639 ms. ( 1174.85 GFlops) 
+Layer 12:  Elapse time 24.442673 ms. ( 1779.12 GFlops) 
+Layer 13:  Elapse time 20.932674 ms. ( 2077.45 GFlops) 
+Layer 14:  Elapse time 17.486970 ms. ( 2486.80 GFlops) 
+Layer 15:  Elapse time 17.850320 ms. ( 2436.18 GFlops) 
+Total elapse time: 4.109465. (  546.30 GFlops) 
+`
+主机端的不可分页内存分配开销较大，尝试减小预分配内存的大小来加快计算。
