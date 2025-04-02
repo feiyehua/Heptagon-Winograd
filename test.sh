@@ -5,6 +5,8 @@ if [ $# -eq 0 ]; then
     echo "1. Profile"
     echo "2. Timer"
     echo "3. Verify"
+    echo "4. Small Verify"
+    echo "5. Memory"
     read choice
 else
     choice=$1

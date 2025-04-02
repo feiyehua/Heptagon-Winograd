@@ -11,8 +11,6 @@
 
 # Note: Manual control number of omp threads
 # export OMP_NUN_THREADS=64
-
 # Note: numactl - Control NUMA policy for processes or shared memory, see `man numactl'.`
 # Note: perf-stat - Run a command and gather performance counter statistics, see `man perf stat'.
-export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 numactl --cpunodebind=0-3 --membind=0-3 perf stat -ddd compute-sanitizer ./winograd conf/vgg16.conf 1

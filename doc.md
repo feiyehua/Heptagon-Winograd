@@ -7,6 +7,9 @@
 在集群上使用spack：
 `source /data/spack/share/spack/setup-env.sh`
 `spack env activate -p winograd`
+`spack add cuda@12.6`
+`spack install cuda@12.6`
+`spack load cuda@12.6`
 ### 使用了的spack包
 
 ## 性能分析

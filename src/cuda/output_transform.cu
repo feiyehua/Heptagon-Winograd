@@ -149,7 +149,7 @@ void alloc_M_Tensor_Memory(cudaPitchedPtr& M_tensor, V_shape_t vs, U_shape_t us,
   cudaExtent device_M_tensor_extent = make_cudaExtent(
       vs.num_tiles * sizeof(float) * us.oc, ti.tile_in_w, ti.tile_in_h);
   printf("\n%ld\n\n", vs.num_tiles * sizeof(float) * us.oc * ti.tile_in_w * ti.tile_in_h);
-  auto err=cudaMalloc3D(&device_M_tensor, device_M_tensor_extent);
+  auto err = cudaMalloc3D(&device_M_tensor, device_M_tensor_extent);
   if (err != cudaSuccess) {
     std::cout << cudaGetErrorString(err) << std::endl;
     exit(-1);
@@ -180,9 +180,17 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,         // input te
   // 分配Y_tensor内存
   cudaPitchedPtr device_Y_tensor;
   cudaExtent device_Y_tensor_extent = make_cudaExtent(
-      sizeof(float) * ti.tile_out_w, ti.tile_in_h, us.oc * vs.num_tiles);
-  cudaMalloc3D(&device_Y_tensor, device_Y_tensor_extent);
-  printf("%ld\n", sizeof(float) * ti.tile_out_w* ti.tile_in_h* us.oc * vs.num_tiles);
+      sizeof(float) * ti.tile_in_w, ti.tile_in_h, us.oc * vs.num_tiles);
+  // printf("xyz,%lu,%lu,%lu\n", sizeof(float) * ti.tile_out_w, ti.tile_in_h, us.oc * vs.num_tiles);
+  // cudaError_t err;
+  // printf("xyz,%lu,%lu,%lu\n", device_Y_tensor.pitch, device_Y_tensor.ysize, device_Y_tensor.xsize);
+  // std::cout << cudaGetErrorString(err) << std::endl;
+  // size_t avail, total;
+  // cudaMemGetInfo(&avail, &total);
+  // printf("avail,%lu,total,%lu\n", avail, total);
+  // printf("%ld\n", sizeof(float) * ti.tile_out_w* ti.tile_in_h* us.oc * vs.num_tiles);
+
+  device_Memory_Pool.poolMalloc3D(&device_Y_tensor, device_Y_tensor_extent);
 
   //计算Y_tensor
   output_transform<<<DIV_UP(us.oc * vs.num_tiles, 1024), 1024>>>(
@@ -216,7 +224,7 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,         // input te
       sizeof(float) * os.w, os.h, os.oc * os.bs);  // device_out_tensor_extent;  //
   host_out_tensor_copy_parms.kind = cudaMemcpyHostToHost;
   cudaMemcpy3D(&host_out_tensor_copy_parms);
-  cudaFree(device_Y_tensor.ptr);
+  // cudaFree(device_Y_tensor.ptr);
   // device_Memory_Pool.free(device_out_tensor.ptr);
   // cudaFree(device_Y_tensor.ptr);
   // cudaFree(device_M_tensor.ptr);

@@ -11,7 +11,9 @@
 
 # Note: Manual control number of omp threads
 # export OMP_NUN_THREADS=64
-
+# export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+# ls /usr/local/cuda/lib64
+# echo $LD_LIBRARY_PATH
 # Note: numactl - Control NUMA policy for processes or shared memory, see `man numactl'.`
 # Note: perf-stat - Run a command and gather performance counter statistics, see `man perf stat'.
 
