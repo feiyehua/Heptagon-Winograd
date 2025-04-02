@@ -536,7 +536,6 @@ void winograd_convolution(
   }
   device_M_tensor_alloc_thread.join();
 
-  printf("%lu\n", device_M_tensor.pitch);
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
       // 定义出U V M Tensor指针

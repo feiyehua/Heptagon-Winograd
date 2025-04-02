@@ -148,7 +148,6 @@ void alloc_M_Tensor_Memory(cudaPitchedPtr& M_tensor, V_shape_t vs, U_shape_t us,
   cudaPitchedPtr device_M_tensor;
   cudaExtent device_M_tensor_extent = make_cudaExtent(
       vs.num_tiles * sizeof(float) * us.oc, ti.tile_in_w, ti.tile_in_h);
-  printf("\n%ld\n\n", vs.num_tiles * sizeof(float) * us.oc * ti.tile_in_w * ti.tile_in_h);
   auto err = cudaMalloc3D(&device_M_tensor, device_M_tensor_extent);
   if (err != cudaSuccess) {
     std::cout << cudaGetErrorString(err) << std::endl;
