@@ -458,7 +458,7 @@ void winograd_convolution(
   std::chrono::system_clock::time_point start;
   std::chrono::system_clock::time_point end;
   std::chrono::milliseconds duration;
-  Device_Memory_Pool device_Memory_Pool;
+  static Device_Memory_Pool device_Memory_Pool;
   static bool initialized = 0;
   static cublasHandle_t handle;
   static std::thread cublasHandleCreate;
@@ -468,12 +468,15 @@ void winograd_convolution(
   if (!initialized) {
     std::thread tmp1(cublasCreate, &handle);
     std::swap(tmp1, cublasHandleCreate);
-    std::thread tmp2(cudaHostMalloc, &packed_image, (size_t)20000000000, cudaHostAllocMapped);  // 20000000000
+    std::thread tmp2(cudaHostMalloc, &packed_image, (size_t)200000000, cudaHostAllocMapped);  // 20000000000
     // alloc enough memory to store packed_image and out tensor
     std::swap(tmp2, cudaHostMallocThread);
     // cudaHostAlloc(
     //   &packed_image, sizeof(float) * ti.tile_in_h * ti.tile_in_w * ti.num_tiles * is.ic,
     //   cudaHostAllocMapped);
+    device_Memory_Pool.init();
+  } else {
+    device_Memory_Pool.poolFree();
   }
   initialized = 1;
   /* new vars of shape */
@@ -533,6 +536,7 @@ void winograd_convolution(
   }
   device_M_tensor_alloc_thread.join();
 
+  printf("%lu\n", device_M_tensor.pitch);
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
       // 定义出U V M Tensor指针
@@ -567,7 +571,7 @@ void winograd_convolution(
   }
   // cublasDestroy(handle);
   cudaFree(device_U_tensor);
-  cudaFree(device_V_tensor);
+  // cudaFree(device_V_tensor);
   // cudaFree(device_U_tensor);
   // cudaFree(device_V_tensor);
   // 6000ms

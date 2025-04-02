@@ -1,6 +1,6 @@
 #include "image_transform.cuh"
 
-void allocate_packed_image_memory(void** ptr, size_t size, unsigned int flags) {
+void allocate_packed_image_memory(void **ptr, size_t size, unsigned int flags) {
   cudaHostAlloc(ptr, size, flags);
 }
 // 计算某个tile对应的横纵坐标
@@ -227,8 +227,10 @@ void device_image_transform(float *__restrict__ packed_image,
   cudaExtent V_tensor_extent = make_cudaExtent(
       sizeof(float) * vs.ic * vs.num_tiles, ti.tile_in_w, ti.tile_in_h);
   cudaPitchedPtr device_V_tensor;
-  cudaMalloc3D(&device_V_tensor, V_tensor_extent);
+  device_Memory_Pool.poolMalloc3D(&device_V_tensor, V_tensor_extent);
   // alloc_packed_image.join();
+  // printf("%ld\n", sizeof(float) * vs.ic * vs.num_tiles * ti.tile_in_w * ti.tile_in_h);
+
   image_transform<<<DIV_UP(vs.num_tiles * vs.ic, 1024), 1024>>>(
       device_packed_image, device_V_tensor, vs, ti, vs.ic * vs.num_tiles);
   cudaDeviceSynchronize();

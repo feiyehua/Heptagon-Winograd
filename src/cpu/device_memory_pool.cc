@@ -13,7 +13,28 @@ Device_Memory_Pool::~Device_Memory_Pool() {
   }
 }
 
-void Device_Memory_Pool::free(void* ptr) {
-  cudaFree(ptr);
-  // this->memory_free_queue.push(thread(cudaFree, ptr));
+// void Device_Memory_Pool::free(void* ptr) {
+//   cudaFree(ptr);
+//   // this->memory_free_queue.push(thread(cudaFree, ptr));
+// }
+
+// Let pre-allocate 17GB of VRAM and assume it is sufficient
+void Device_Memory_Pool::init() {
+  cudaError_t err = cudaMalloc(&startPtr, sizeof(char) * ((size_t)1 << (size_t)33));
+  nextFree = startPtr;
+  if (err != cudaSuccess) {
+    std::cout << cudaGetErrorString(err) << std::endl;
+    exit(-1);
   }
+}
+
+void Device_Memory_Pool::poolMalloc3D(cudaPitchedPtr* pitchedDevPtr, cudaExtent extent) {
+  pitchedDevPtr->ptr = nextFree;
+  // implement 512 byte alignment
+  pitchedDevPtr->pitch = ROUND_UP(extent.width, 512);
+  pitchedDevPtr->ysize = extent.height;
+  pitchedDevPtr->xsize = extent.depth;
+  nextFree = (char*)nextFree + pitchedDevPtr->pitch * pitchedDevPtr->ysize * pitchedDevPtr->xsize;
+}
+
+void Device_Memory_Pool::poolFree() { nextFree = startPtr; }
