@@ -255,28 +255,10 @@ void device_image_transform(float *__restrict__ image,
       sizeof(float) * vs.ic * vs.num_tiles, ti.tile_in_w, ti.tile_in_h);
   cudaPitchedPtr device_V_tensor;
   device_Memory_Pool.poolMalloc3D(&device_V_tensor, V_tensor_extent);
-  // cudaMalloc3D(&device_V_tensor, V_tensor_extent);
-  // device_Memory_Pool.poolMalloc3D(&device_V_tensor, V_tensor_extent);
-  // alloc_packed_image.join();
-  // printf("%ld\n", sizeof(float) * vs.ic * vs.num_tiles * ti.tile_in_w * ti.tile_in_h);
 
   image_transform<<<DIV_UP(vs.num_tiles * vs.ic, 1024), 1024>>>(
       device_packed_image, device_V_tensor, vs, ti, vs.ic * vs.num_tiles);
   cudaDeviceSynchronize();
-
-  //释放内存，将结果拷贝回主机
-  // device_Memory_Pool.free(device_packed_image.ptr);
-  // cudaFree(device_packed_image.ptr);
-  // cudaMemcpy3DParms device_V_copy_parms = {0};
-  // device_V_copy_parms.srcPtr = device_V_tensor;
-  // device_V_copy_parms.dstPtr.ptr = V;
-  // device_V_copy_parms.dstPtr.xsize = ti.tile_in_h;
-  // device_V_copy_parms.dstPtr.ysize = ti.tile_in_w;
-  // device_V_copy_parms.dstPtr.pitch = sizeof(float) * vs.num_tiles * vs.ic;
-  // device_V_copy_parms.extent = V_tensor_extent;
-  // device_V_copy_parms.kind = cudaMemcpyDeviceToHost;
-  // cudaMemcpy3D(&device_V_copy_parms);
-  // cudaFree(device_V_tensor.ptr);
 
   *V_tensor = (float *)device_V_tensor.ptr;
   *ldv = device_V_tensor.pitch / (sizeof(float));

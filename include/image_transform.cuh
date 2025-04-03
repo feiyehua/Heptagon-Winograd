@@ -16,7 +16,7 @@ __global__ void image_packing(const cudaPitchedPtr *device_image,
                               const image_shape_t is,
                               const tiling_info_t ti);
 
-void device_image_transform(float *__restrict__ device_packed_image,
+void device_image_transform(float *__restrict__ image,
                             const image_shape_t is,
                             const tiling_info_t ti,
                             const V_shape_t vs,

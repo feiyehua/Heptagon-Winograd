@@ -134,7 +134,6 @@ __global__ void device_output_unpacking_store(cudaPitchedPtr device_Y_tensor,
   int64_t tile = tid / os.oc;
   tile_index_t tidx = device_get_tile_index(tile, ti);
   int64_t batch = tidx.b, ww = tidx.tw, hh = tidx.th;
-  float tmp[TILE_OUT_H][TILE_OUT_W];
   if (batch >= os.bs) return;
 #pragma unroll
   for (int64_t h = 0; h < ti.tile_out_h; ++h) {
@@ -154,29 +153,11 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,         // input te
                              const V_shape_t vs,
                              const out_shape_t os,
                              Device_Memory_Pool& device_Memory_Pool) {
-  // 将M_tensor拷贝到GPU内存上
-  // cudaMemcpy3DParms device_M_tensor_copy_parms = {0};
-  // device_M_tensor_copy_parms.srcPtr.ptr = M;
-  // device_M_tensor_copy_parms.srcPtr.xsize = ti.tile_in_h;
-  // device_M_tensor_copy_parms.srcPtr.ysize = ti.tile_in_w;
-  // device_M_tensor_copy_parms.srcPtr.pitch = vs.num_tiles * us.oc * sizeof(float);
-  // device_M_tensor_copy_parms.dstPtr = device_M_tensor;
-  // device_M_tensor_copy_parms.extent = device_M_tensor_extent;
-  // device_M_tensor_copy_parms.kind = cudaMemcpyHostToDevice;
-  // cudaMemcpy3D(&device_M_tensor_copy_parms);
 
   // 分配Y_tensor内存
   cudaPitchedPtr device_Y_tensor;
   cudaExtent device_Y_tensor_extent = make_cudaExtent(
       sizeof(float) * ti.tile_in_w, ti.tile_in_h, us.oc * vs.num_tiles);
-  // printf("xyz,%lu,%lu,%lu\n", sizeof(float) * ti.tile_out_w, ti.tile_in_h, us.oc * vs.num_tiles);
-  // cudaError_t err;
-  // printf("xyz,%lu,%lu,%lu\n", device_Y_tensor.pitch, device_Y_tensor.ysize, device_Y_tensor.xsize);
-  // std::cout << cudaGetErrorString(err) << std::endl;
-  // size_t avail, total;
-  // cudaMemGetInfo(&avail, &total);
-  // printf("avail,%lu,total,%lu\n", avail, total);
-  // printf("%ld\n", sizeof(float) * ti.tile_out_w* ti.tile_in_h* us.oc * vs.num_tiles);
 
   device_Memory_Pool.poolMalloc3D(&device_Y_tensor, device_Y_tensor_extent);
 
@@ -190,20 +171,15 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,         // input te
       sizeof(float) * ROUND_UP(os.w ,4), ROUND_UP(os.h,4), os.oc * os.bs);
   //等待Y_tensor计算完成
   device_Memory_Pool.poolMalloc3D(&device_out_tensor, device_out_tensor_extent);
-  // cudaHostGetDevicePointer(&device_out_tensor,out,0);
   cudaDeviceSynchronize();
 
   device_output_unpacking_store<<<DIV_UP(os.oc * ti.num_tiles, 1024), 1024>>>(
       device_Y_tensor, (float*)device_out_tensor.ptr, os, ti);
-  // cudaFree(device_M_tensor.ptr);
   cudaDeviceSynchronize();
 
   // 将Y_tensor复制回host
   cudaMemcpy3DParms host_out_tensor_copy_parms = {0};
   host_out_tensor_copy_parms.srcPtr = device_out_tensor;
-  // host_out_tensor_copy_parms.srcPtr.pitch = ROUND_UP(os.w, 4) * sizeof(float);
-  // host_out_tensor_copy_parms.srcPtr.ysize = ROUND_UP(os.h, 4);
-  // host_out_tensor_copy_parms.srcPtr.xsize = us.oc * os.bs;
   host_out_tensor_copy_parms.dstPtr.ptr = out;
   host_out_tensor_copy_parms.dstPtr.pitch = sizeof(float) * os.w;
   host_out_tensor_copy_parms.dstPtr.ysize = os.h;
@@ -212,8 +188,4 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,         // input te
       sizeof(float) * os.w, os.h, os.oc * os.bs);  // device_out_tensor_extent;  //
   host_out_tensor_copy_parms.kind = cudaMemcpyHostToHost;
   cudaMemcpy3D(&host_out_tensor_copy_parms);
-  // cudaFree(device_Y_tensor.ptr);
-  // device_Memory_Pool.free(device_out_tensor.ptr);
-  // cudaFree(device_Y_tensor.ptr);
-  // cudaFree(device_M_tensor.ptr);
 }
