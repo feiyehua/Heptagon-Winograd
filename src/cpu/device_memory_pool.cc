@@ -33,4 +33,9 @@ void Device_Memory_Pool::poolMalloc3D(cudaPitchedPtr* pitchedDevPtr, cudaExtent 
   nextFree = (char*)nextFree + pitchedDevPtr->pitch * pitchedDevPtr->ysize * extent.depth;
 }
 
+void Device_Memory_Pool::poolMalloc(void** ptr, size_t size) {
+  *ptr = nextFree;
+  nextFree = (char*)nextFree + ROUND_UP(size, 16);
+}
+
 void Device_Memory_Pool::poolFree() { nextFree = startPtr; }

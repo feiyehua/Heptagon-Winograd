@@ -572,7 +572,7 @@ void winograd_convolution(
     }
   }
   // cublasDestroy(handle);
-  cudaFree(device_U_tensor);
+  // cudaFree(device_U_tensor);
   // cudaFree(device_V_tensor);
   // cudaFree(device_U_tensor);
   // cudaFree(device_V_tensor);

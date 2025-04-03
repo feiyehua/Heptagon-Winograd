@@ -13,15 +13,15 @@ __host__ void device_filter_transform(
   float *__restrict__ device_filter;
   float *__restrict__ device_U;
   float *__restrict__ device_packed_U;
-  cudaMalloc((void **)&device_filter, sizeof(float) * collapsed_dim_size * fs.h * fs.w);
-  cudaMalloc((void **)&device_U, sizeof(float) * collapsed_dim_size * us.h * us.w);
-  cudaMalloc((void **)&device_packed_U, sizeof(float) * collapsed_dim_size * us.h * us.w);
+  device_Memory_Pool.poolMalloc((void **)&device_filter, sizeof(float) * collapsed_dim_size * fs.h * fs.w);
+  device_Memory_Pool.poolMalloc((void **)&device_U, sizeof(float) * collapsed_dim_size * us.h * us.w);
+  device_Memory_Pool.poolMalloc((void **)&device_packed_U, sizeof(float) * collapsed_dim_size * us.h * us.w);
   cudaMemcpy(
       device_filter, packed_filter, sizeof(float) * collapsed_dim_size * fs.h * fs.w, cudaMemcpyHostToDevice);
   thread_filter_transform<<<us.oc, us.ic>>>(
       device_filter, device_U, device_packed_U, fs, us, collapsed_dim_size);
   cudaDeviceSynchronize();
-  cudaFree(device_filter);
+  // cudaFree(device_filter);
   // cudaFree(device_filter);
   // cudaMemcpy(U, device_packed_U, sizeof(float) * collapsed_dim_size * us.h * us.w, cudaMemcpyDeviceToHost);
   // cudaFree(device_packed_U);

@@ -20,6 +20,7 @@ class Device_Memory_Pool {
 
   void poolFree();
   void poolMalloc3D(cudaPitchedPtr* pitchedDevPtr, cudaExtent extent);
+  void poolMalloc(void** ptr, size_t size);
 
  private:
   void* startPtr;
