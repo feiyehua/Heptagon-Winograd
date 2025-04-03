@@ -1,15 +1,15 @@
 ## CPU单核测试
 ### Baseline
-`
+```
 Layer 0 :  Elapse time 0.013987 ms. (    0.99 GFlops) 
 Layer 1 :  Elapse time 0.039339 ms. (    1.76 GFlops) 
 Layer 2 :  Elapse time 1.464367 ms. (    1.70 GFlops) 
 Layer 3 :  Elapse time 25.849660 ms. (    6.57 GFlops) 
 Layer 4 :  Elapse time 826.042652 ms. (    6.58 GFlops) 
 Total elapse time: 0.853410. (    6.57 GFlops) 
-`
+```
 
-`
+```
 Layer 0 :  Elapse time 8186.878602 ms. (    1.33 GFlops) 
 Layer 1 :  Elapse time 40464.980682 ms. (    5.75 GFlops) 
 Layer 2 :  Elapse time 18053.032001 ms. (    6.33 GFlops) 
@@ -27,19 +27,18 @@ Layer 13:  Elapse time 7970.119715 ms. (    5.46 GFlops)
 Layer 14:  Elapse time 7960.529010 ms. (    5.46 GFlops) 
 Layer 15:  Elapse time 7955.145677 ms. (    5.47 GFlops) 
 Total elapse time: 423.604273. (    5.30 GFlops) 
-`
+```
 
 ### 1 仅优化了 filter_transform 访存顺序的结果
-`
+```
 Layer 0 :  Elapse time 0.013669 ms. (    1.01 GFlops) 
 Layer 1 :  Elapse time 0.040929 ms. (    1.69 GFlops) 
 Layer 2 :  Elapse time 1.454035 ms. (    1.71 GFlops) 
 Layer 3 :  Elapse time 26.830991 ms. (    6.33 GFlops) 
 Layer 4 :  Elapse time 820.742289 ms. (    6.62 GFlops) 
 Total elapse time: 0.849082. (    6.61 GFlops) 
-
-`
-`
+```
+```
 Layer 0 :  Elapse time 7653.730710 ms. (    1.42 GFlops) 
 Layer 1 :  Elapse time 36484.388351 ms. (    6.37 GFlops) 
 Layer 2 :  Elapse time 16407.272975 ms. (    6.96 GFlops) 
@@ -57,18 +56,18 @@ Layer 13:  Elapse time 7748.500268 ms. (    5.61 GFlops)
 Layer 14:  Elapse time 7748.624007 ms. (    5.61 GFlops) 
 Layer 15:  Elapse time 7748.088360 ms. (    5.61 GFlops) 
 Total elapse time: 400.305413. (    5.61 GFlops) 
-`
+```
 
 ### 2 将 filte_transform 转移到GPU上计算的结果
-`
+```
 Layer 0 :  Elapse time 47.079961 ms. (    0.00 GFlops) 
 Layer 1 :  Elapse time 0.056267 ms. (    1.23 GFlops) 
 Layer 2 :  Elapse time 0.855605 ms. (    2.91 GFlops) 
 Layer 3 :  Elapse time 24.053971 ms. (    7.06 GFlops) 
 Layer 4 :  Elapse time 816.472689 ms. (    6.66 GFlops) 
 Total elapse time: 0.888518. (    6.31 GFlops) 
-`
-`
+```
+```
 Layer 0 :  Elapse time 7679.061333 ms. (    1.42 GFlops) 
 Layer 1 :  Elapse time 36590.525309 ms. (    6.36 GFlops) 
 Layer 2 :  Elapse time 16455.760956 ms. (    6.94 GFlops) 
@@ -86,27 +85,27 @@ Layer 13:  Elapse time 7742.335717 ms. (    5.62 GFlops)
 Layer 14:  Elapse time 7744.733731 ms. (    5.61 GFlops) 
 Layer 15:  Elapse time 7744.950692 ms. (    5.61 GFlops) 
 Total elapse time: 401.178605. (    5.60 GFlops) 
-`
+```
 
 ### 3 将imag_transform转移到GPU上计算的结果
-`
+```
 Layer 0 :  Elapse time 38.395007 ms. (    0.00 GFlops) 
 Layer 1 :  Elapse time 0.175317 ms. (    0.39 GFlops) 
 Layer 2 :  Elapse time 1.137018 ms. (    2.19 GFlops) 
 Layer 3 :  Elapse time 24.143060 ms. (    7.04 GFlops) 
 Layer 4 :  Elapse time 828.822374 ms. (    6.56 GFlops) 
 Total elapse time: 0.892673. (    6.28 GFlops) 
-`
+```
 
-`
+```
 Layer 0 :  Elapse time 38.949966 ms. (    0.00 GFlops) 
 Layer 1 :  Elapse time 0.460386 ms. (    0.15 GFlops) 
 Layer 2 :  Elapse time 1.597643 ms. (    1.56 GFlops) 
 Layer 3 :  Elapse time 22.352695 ms. (    7.60 GFlops) 
 Layer 4 :  Elapse time 721.854687 ms. (    7.53 GFlops) 
 Total elapse time: 0.785215. (    7.14 GFlops) 
-`
-`
+```
+```
 Layer 0 :  Elapse time 7566.001972 ms. (    1.44 GFlops) 
 Layer 1 :  Elapse time 31855.883678 ms. (    7.30 GFlops) 
 Layer 2 :  Elapse time 15184.141000 ms. (    7.52 GFlops) 
@@ -124,18 +123,18 @@ Layer 13:  Elapse time 7603.738387 ms. (    5.72 GFlops)
 Layer 14:  Elapse time 7603.749355 ms. (    5.72 GFlops) 
 Layer 15:  Elapse time 7604.112387 ms. (    5.72 GFlops) 
 Total elapse time: 387.629164. (    5.79 GFlops) 
-`
+```
 
 ### 4 将output_transform放到GPU上
-`
+```
 Layer 0 :  Elapse time 37.535270 ms. (    0.00 GFlops) 
 Layer 1 :  Elapse time 0.658353 ms. (    0.10 GFlops) 
 Layer 2 :  Elapse time 2.168655 ms. (    1.15 GFlops) 
 Layer 3 :  Elapse time 21.558603 ms. (    7.88 GFlops) 
 Layer 4 :  Elapse time 662.261645 ms. (    8.21 GFlops) 
 Total elapse time: 0.724183. (    7.74 GFlops) 
-`
-`
+```
+```
 Layer 0 :  Elapse time 6147.348642 ms. (    1.77 GFlops) 
 Layer 1 :  Elapse time 30793.569009 ms. (    7.55 GFlops) 
 Layer 2 :  Elapse time 14657.356342 ms. (    7.79 GFlops) 
@@ -153,18 +152,18 @@ Layer 13:  Elapse time 7622.874022 ms. (    5.70 GFlops)
 Layer 14:  Elapse time 7621.769667 ms. (    5.71 GFlops) 
 Layer 15:  Elapse time 7629.914999 ms. (    5.70 GFlops) 
 Total elapse time: 381.007475. (    5.89 GFlops) 
-`
+```
 
 ### 5 在CPU上并行进行某些计算
-`
+```
 Layer 0 :  Elapse time 89.387337 ms. (    0.00 GFlops) 
 Layer 1 :  Elapse time 0.653028 ms. (    0.11 GFlops) 
 Layer 2 :  Elapse time 1.711051 ms. (    1.45 GFlops) 
 Layer 3 :  Elapse time 7.510026 ms. (   22.62 GFlops) 
 Layer 4 :  Elapse time 175.617695 ms. (   30.95 GFlops) 
 Total elapse time: 0.274879. (   20.40 GFlops) 
-`
-`
+```
+```
 Layer 0 :  Elapse time 2622.104009 ms. (    4.16 GFlops) 
 Layer 1 :  Elapse time 5294.917027 ms. (   43.92 GFlops) 
 Layer 2 :  Elapse time 2023.618698 ms. (   56.43 GFlops) 
@@ -182,7 +181,7 @@ Layer 13:  Elapse time 339.621305 ms. (  128.04 GFlops)
 Layer 14:  Elapse time 339.550654 ms. (  128.07 GFlops) 
 Layer 15:  Elapse time 340.331316 ms. (  127.78 GFlops) 
 Total elapse time: 28.487402. (   78.81 GFlops) 
-`
+```
 提升显著！
 
 进行性能分析，结果显示主要的性能瓶颈在于：
@@ -275,7 +274,7 @@ Total elapse time: 8.280586. (  271.12 GFlops)
 ```
 
 ### 10 重复使用已经分配过的内存
-`
+```
 Layer 0 :  Elapse time 3522.809664 ms. (    3.09 GFlops) 
 Layer 1 :  Elapse time 1667.764346 ms. (  139.44 GFlops) 
 Layer 2 :  Elapse time 680.066029 ms. (  167.91 GFlops) 
@@ -293,11 +292,11 @@ Layer 13:  Elapse time 43.272336 ms. ( 1004.95 GFlops)
 Layer 14:  Elapse time 40.895065 ms. ( 1063.37 GFlops) 
 Layer 15:  Elapse time 40.778399 ms. ( 1066.41 GFlops) 
 Total elapse time: 8.819344. (  254.55 GFlops) 
-`
+```
 由于内存尺寸较大，第一次分配所用时间较长。不过对于后续计算，速度提升明显。
 
 ### 使用float4进行向量化操作
-`
+```
 Layer 0 :  Elapse time 3386.732658 ms. (    3.22 GFlops) 
 Layer 1 :  Elapse time 1497.247696 ms. (  155.32 GFlops) 
 Layer 2 :  Elapse time 616.797288 ms. (  185.13 GFlops) 
@@ -315,10 +314,10 @@ Layer 13:  Elapse time 36.508004 ms. ( 1191.15 GFlops)
 Layer 14:  Elapse time 35.447677 ms. ( 1226.78 GFlops) 
 Layer 15:  Elapse time 35.785357 ms. ( 1215.20 GFlops) 
 Total elapse time: 8.529026. (  263.22 GFlops) 
-`
+```
 
 ### 不重复使用内存，而是重复利用一片预先申请的内存
-`
+```
 Layer 0 :  Elapse time 2752.175967 ms. (    3.96 GFlops) 
 Layer 1 :  Elapse time 872.197310 ms. (  266.63 GFlops) 
 Layer 2 :  Elapse time 342.701356 ms. (  333.21 GFlops) 
@@ -336,10 +335,10 @@ Layer 13:  Elapse time 20.622333 ms. ( 2108.71 GFlops)
 Layer 14:  Elapse time 17.397642 ms. ( 2499.57 GFlops) 
 Layer 15:  Elapse time 17.552296 ms. ( 2477.54 GFlops) 
 Total elapse time: 6.208979. (  361.57 GFlops) 
-`
+```
 
 ### 调整预分配内存大小
-`
+```
 Layer 0 :  Elapse time 689.964056 ms. (   15.80 GFlops) 
 Layer 1 :  Elapse time 861.095031 ms. (  270.06 GFlops) 
 Layer 2 :  Elapse time 338.151375 ms. (  337.69 GFlops) 
@@ -357,5 +356,5 @@ Layer 13:  Elapse time 20.932674 ms. ( 2077.45 GFlops)
 Layer 14:  Elapse time 17.486970 ms. ( 2486.80 GFlops) 
 Layer 15:  Elapse time 17.850320 ms. ( 2436.18 GFlops) 
 Total elapse time: 4.109465. (  546.30 GFlops) 
-`
+```
 主机端的不可分页内存分配开销较大，尝试减小预分配内存的大小来加快计算。
