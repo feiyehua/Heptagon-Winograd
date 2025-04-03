@@ -57,7 +57,8 @@
         "istream": "cpp",
         "numbers": "cpp",
         "ostream": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "__functional_base": "cpp"
     },
     "C_Cpp.formatting": "clangFormat",
     "editor.formatOnPaste": true,

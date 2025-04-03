@@ -9,6 +9,7 @@
 #include <cstring>
 #include <iostream>
 #include <thread>
+#include <vector>
 
 #include "cublas_sgemm.cuh"
 #include "device_memory_pool.h"
@@ -17,7 +18,13 @@
 #include "output_transform.cuh"
 #include "utils.h"
 #include "winograd_cuda.h"
-void cudaHostMalloc(float **ptr, size_t size, unsigned int flags) { cudaHostAlloc(ptr, size, flags); }
+
+#define GPU_NUM 2
+
+void device_initialize(cublasHandle_t *handle, Device_Memory_Pool &device_Memory_Pool, int num) {
+  cublasCreate(handle);
+  device_Memory_Pool.init(num);
+}
 
 // get V tensor = BT*d*B
 void image_transform(float *__restrict__ packed_image,
@@ -458,28 +465,76 @@ void winograd_convolution(
   std::chrono::system_clock::time_point start;
   std::chrono::system_clock::time_point end;
   std::chrono::milliseconds duration;
-  static Device_Memory_Pool device_Memory_Pool;
+  static Device_Memory_Pool device_Memory_Pool[GPU_NUM];
   static bool initialized = 0;
-  static cublasHandle_t handle;
+  static cublasHandle_t handle[GPU_NUM];
   static std::thread cublasHandleCreate;
   static std::thread cudaHostMallocThread;
   static float *packed_image;
   // cublasCreate(&handle);
   if (!initialized) {
-    cublasCreate(&handle);
-    device_Memory_Pool.init();
+    std::vector<std::thread> _t;
+#pragma omp parallel for collapse(1)
+    for (int i = 0; i < GPU_NUM; i++) {
+      // _t.push_back(std::thread(device_initialize, &handle[i], std::ref(device_Memory_Pool[i]), i));
+      device_initialize(&handle[i], device_Memory_Pool[i], i);
+    }
+    // cublasCreate(&handle);
+    // device_Memory_Pool.init();
   } else {
-    device_Memory_Pool.poolFree();
+    for (int i = 0; i < GPU_NUM; i++) {
+      device_Memory_Pool[i].poolFree();
+    }
   }
 
   initialized = 1;
-  winograd_cuda(image,
-                image_height,
-                image_width,
-                input_channel_num,
-                filter,
-                output_channel_num,
-                batch_num,
-                out,
-                device_Memory_Pool);
+#pragma omp parallel for collapse(1)
+  for (int i = 0; i < GPU_NUM; i++) {
+    // std::vector<std::thread> _t;
+    // _t.push_back(std::thread(winograd_cuda,
+    //                          image_height,
+    //                          image_width,
+    //                          input_channel_num,
+    //                          filter,
+    //                          output_channel_num,
+    //                          batch_num / 2,
+    //                          out,
+    //                          std::ref(device_Memory_Pool[i]),
+    //                          std::ref(handle[i]),
+    //                          i));
+    // for (int i = 0; i < GPU_NUM; i++) {
+    //   if (_t[i].joinable()) {
+    //     _t[i].join();
+    //   }
+    int bn;
+    if (i != GPU_NUM - 1) {
+      bn = batch_num / GPU_NUM;
+    } else {
+      bn = batch_num / GPU_NUM + batch_num % GPU_NUM;
+    }
+    const int output_height = image_height - 2;
+    const int output_width = image_width - 2;
+    winograd_cuda(image + input_channel_num * image_height * image_width * batch_num / GPU_NUM * i,
+                  image_height,
+                  image_width,
+                  input_channel_num,
+                  filter,
+                  output_channel_num,
+                  bn,
+                  out + output_channel_num * output_height * output_width * batch_num / GPU_NUM * i,
+                  device_Memory_Pool[i],
+                  handle[i],
+                  i);
+  }
 }
+// winograd_cuda(image,
+//               image_height,
+//               image_width,
+//               input_channel_num,
+//               filter,
+//               output_channel_num,
+//               batch_num,
+//               out,
+//               device_Memory_Pool,
+//               handle,
+//               0);

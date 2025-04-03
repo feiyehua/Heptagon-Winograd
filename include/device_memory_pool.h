@@ -16,13 +16,14 @@ class Device_Memory_Pool {
 
   // void free(void* ptr);
 
-  void init();
+  void init(int i);
 
   void poolFree();
   void poolMalloc3D(cudaPitchedPtr* pitchedDevPtr, cudaExtent extent);
   void poolMalloc(void** ptr, size_t size);
 
  private:
+  int device;
   void* startPtr;
   void* nextFree;
   std::queue<std::thread> memory_free_queue;

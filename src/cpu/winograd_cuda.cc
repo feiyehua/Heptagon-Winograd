@@ -9,10 +9,11 @@ void winograd_cuda(
     const int output_channel_num,
     const int batch_num,
     float *__restrict__ out,
-    Device_Memory_Pool &device_Memory_Pool) {
-  cublasHandle_t handle;
+    Device_Memory_Pool &device_Memory_Pool,
+    cublasHandle_t &handle,
+    int cuda_device_num) {
+  cudaSetDevice(cuda_device_num);
   float *device_out_tensor;
-  cublasCreate(&handle);
   /* new vars of shape */
   // image shape
   const image_shape_t is = {.bs = batch_num, .ic = input_channel_num, .h = image_height, .w = image_width};

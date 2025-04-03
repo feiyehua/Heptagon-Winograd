@@ -380,3 +380,26 @@ Layer 15:  Elapse time 11.783679 ms. ( 3690.40 GFlops)
 Total elapse time: 2.617447. (  857.71 GFlops) 
 ```
 发现在image_transform部分还是有严重的性能瓶颈：一部分是执行cuda核函数耗时较长，另一部分是在CPU上工作时间较长。将image_transform移回了GPU。
+
+### 使用多卡并行计算
+```
+Layer 0 :  Elapse time 263.965050 ms. (   41.30 GFlops) 
+Layer 1 :  Elapse time 242.462715 ms. (  959.12 GFlops) 
+Layer 2 :  Elapse time 124.992053 ms. (  913.58 GFlops) 
+Layer 3 :  Elapse time 142.429988 ms. ( 1603.45 GFlops) 
+Layer 4 :  Elapse time 80.421050 ms. ( 1368.74 GFlops) 
+Layer 5 :  Elapse time 90.396007 ms. ( 2435.40 GFlops) 
+Layer 6 :  Elapse time 97.833316 ms. ( 2250.26 GFlops) 
+Layer 7 :  Elapse time 90.494633 ms. ( 2432.75 GFlops) 
+Layer 8 :  Elapse time 60.083310 ms. ( 1698.85 GFlops) 
+Layer 9 :  Elapse time 67.023675 ms. ( 3045.87 GFlops) 
+Layer 10:  Elapse time 66.790978 ms. ( 3056.48 GFlops) 
+Layer 11:  Elapse time 67.115704 ms. ( 3041.69 GFlops) 
+Layer 12:  Elapse time 10.475318 ms. ( 4151.33 GFlops) 
+Layer 13:  Elapse time 8.117040 ms. ( 5357.44 GFlops) 
+Layer 14:  Elapse time 8.020004 ms. ( 5422.26 GFlops) 
+Layer 15:  Elapse time 7.972002 ms. ( 5454.91 GFlops) 
+Total elapse time: 1.428593. ( 1571.48 GFlops) 
+```
+发现任务本身有非常好的并行性：每个batch间互不关联。
+将batch分成两半放到两个GPU上计算。由于性能瓶颈主要在于内存和显存之间的数据传输，性能提升比例接近一倍。
