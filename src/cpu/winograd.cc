@@ -373,7 +373,7 @@ void image_packing(float *__restrict__ image,
   image_tensor_t image_tensor = (image_tensor_t)image;
 
 // batch个image，每个image有ts.num_tile_per_image个tiles，对每个tiles求卷积
-#pragma omp parallel for collapse(1)
+#pragma omp parallel for collapse(2)
   for (int64_t tile = 0; tile < ti.num_tiles; tile++) {
     for (int64_t ic = 0; ic < is.ic; ic++) {
       for (int64_t h = 0; h < ti.tile_in_h; ++h) {
