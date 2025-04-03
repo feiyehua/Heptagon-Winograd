@@ -50,7 +50,7 @@ __global__ void image_packing(const cudaPitchedPtr device_image,
   }
 }
 // get V tensor = BT*d*B
-__global__ void image_transform(float *__restrict__ device_packed_image,
+__global__ void image_transform(const cudaPitchedPtr device_packed_image,
                                 const cudaPitchedPtr V,
                                 const V_shape_t vs,
                                 const tiling_info_t ti,
@@ -63,15 +63,15 @@ __global__ void image_transform(float *__restrict__ device_packed_image,
   // packed_image_tensor_t packed_image_tensor = (packed_image_tensor_t)packed_image;
   // V_tensor_t V_tensor = (V_tensor_t)V;
 
-  float *packed_image_tensor = (float *)device_packed_image;
+  float *packed_image_tensor = (float *)device_packed_image.ptr;
   float *V_tensor = (float *)V.ptr;
 
   int64_t idx = (blockIdx.x * blockDim.x + threadIdx.x);
   int64_t x_index = (blockIdx.x * blockDim.x + threadIdx.x);
   if (idx >= collapsed_dim_size) return;
 
-  int64_t device_packed_image_z = ti.tile_in_w;
-  int64_t device_packed_image_yz = ti.tile_in_h * device_packed_image_z;
+  int64_t device_packed_image_z = device_packed_image.pitch / sizeof(float);
+  int64_t device_packed_image_yz = device_packed_image.ysize * device_packed_image_z;
 
   int64_t V_tensor_yz = V.ysize * V.pitch / sizeof(float);
   int64_t V_tensor_z = V.pitch / sizeof(float);
@@ -195,7 +195,7 @@ __global__ void image_transform(float *__restrict__ device_packed_image,
   }
 }
 
-void device_image_transform(float *__restrict__ packed_image,
+void device_image_transform(float *__restrict__ image,
                             const image_shape_t is,
                             const tiling_info_t ti,
                             const V_shape_t vs,
@@ -203,8 +203,8 @@ void device_image_transform(float *__restrict__ packed_image,
                             int *ldv,
                             Device_Memory_Pool &device_Memory_Pool) {
   // 直接使用内存映射访问packed_image
-  float *device_packed_image;
-  cudaHostGetDevicePointer(&device_packed_image, packed_image, 0);
+  // float *device_packed_image;
+  // cudaHostGetDevicePointer(&device_packed_image, packed_image, 0);
   //分配device_packed_image内存
   // cudaPitchedPtr device_packed_image;
   // cudaExtent device_packed_image_extent = make_cudaExtent(
@@ -222,6 +222,33 @@ void device_image_transform(float *__restrict__ packed_image,
   // device_packed_image_copy_parms.extent = device_packed_image_extent;
   // device_packed_image_copy_parms.kind = cudaMemcpyHostToDevice;
   // cudaMemcpy3D(&device_packed_image_copy_parms);
+
+  // float *__restrict__ device_image;
+  cudaPitchedPtr device_image;
+  cudaExtent extent = make_cudaExtent(sizeof(float) * ti.tiles_on_w * ti.tile_in_w,
+                                      ti.tiles_on_h * ti.tile_in_h,
+                                      is.bs * is.ic);  // 分配足够的内存，去掉image_packing中的分支
+  device_Memory_Pool.poolMalloc3D(&device_image, extent);
+  cudaMemset(device_image.ptr, 0, device_image.pitch * ti.tiles_on_h * ti.tile_in_h * is.bs * is.ic);
+  cudaExtent image_extent = make_cudaExtent(sizeof(float) * is.w, is.h, is.bs * is.ic);
+  cudaMemcpy3DParms device_image_copy_parms = {0};
+  device_image_copy_parms.srcPtr.ptr = image;
+  device_image_copy_parms.srcPtr.xsize = is.w * sizeof(float);
+  device_image_copy_parms.srcPtr.ysize = is.h;
+  device_image_copy_parms.srcPtr.pitch = is.w * sizeof(float);
+  device_image_copy_parms.dstPtr = device_image;
+  device_image_copy_parms.extent = image_extent;
+  device_image_copy_parms.kind = cudaMemcpyHostToDevice;
+  cudaMemcpy3D(&device_image_copy_parms);
+  //既然在这里需要拷贝一次内存，那应该就可以填充一些多余的0，实现padding，去掉image_packing中的分支。
+
+  // 分配packed_image内存
+  cudaPitchedPtr device_packed_image;
+  cudaExtent device_packed_image_extent = make_cudaExtent(
+      sizeof(float) * ti.tile_in_w, ti.tile_in_h, ti.num_tiles * is.ic);
+  device_Memory_Pool.poolMalloc3D(&device_packed_image, device_packed_image_extent);
+  image_packing<<<DIV_UP(ti.num_tiles * is.ic, 1024), 1024>>>(device_image, device_packed_image, is, ti);
+  cudaDeviceSynchronize();
 
   //分配V_tensor内存
   cudaExtent V_tensor_extent = make_cudaExtent(
