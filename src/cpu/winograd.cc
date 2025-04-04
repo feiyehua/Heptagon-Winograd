@@ -476,11 +476,8 @@ void winograd_convolution(
     std::vector<std::thread> _t;
 #pragma omp parallel for collapse(1)
     for (int i = 0; i < GPU_NUM; i++) {
-      // _t.push_back(std::thread(device_initialize, &handle[i], std::ref(device_Memory_Pool[i]), i));
       device_initialize(&handle[i], device_Memory_Pool[i], i);
     }
-    // cublasCreate(&handle);
-    // device_Memory_Pool.init();
   } else {
     for (int i = 0; i < GPU_NUM; i++) {
       device_Memory_Pool[i].poolFree();
@@ -490,22 +487,6 @@ void winograd_convolution(
   initialized = 1;
 #pragma omp parallel for collapse(1)
   for (int i = 0; i < GPU_NUM; i++) {
-    // std::vector<std::thread> _t;
-    // _t.push_back(std::thread(winograd_cuda,
-    //                          image_height,
-    //                          image_width,
-    //                          input_channel_num,
-    //                          filter,
-    //                          output_channel_num,
-    //                          batch_num / 2,
-    //                          out,
-    //                          std::ref(device_Memory_Pool[i]),
-    //                          std::ref(handle[i]),
-    //                          i));
-    // for (int i = 0; i < GPU_NUM; i++) {
-    //   if (_t[i].joinable()) {
-    //     _t[i].join();
-    //   }
     int bn;
     if (i != GPU_NUM - 1) {
       bn = batch_num / GPU_NUM;
@@ -527,14 +508,3 @@ void winograd_convolution(
                   i);
   }
 }
-// winograd_cuda(image,
-//               image_height,
-//               image_width,
-//               input_channel_num,
-//               filter,
-//               output_channel_num,
-//               batch_num,
-//               out,
-//               device_Memory_Pool,
-//               handle,
-//               0);

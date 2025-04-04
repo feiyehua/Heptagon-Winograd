@@ -29,23 +29,40 @@ __global__ void image_packing(const cudaPitchedPtr device_image,
   int64_t x_index = (blockIdx.x * blockDim.x + threadIdx.x);
   int64_t tile = x_index / is.ic;
   int64_t ic = x_index % is.ic;
+
+  int64_t device_packed_image_tensor_z = device_packed_image.pitch / sizeof(float);
+  int64_t device_packed_image_tensor_yz = device_packed_image.ysize * device_packed_image_tensor_z;
+
+  int64_t device_image_tensor_z = device_image.pitch / sizeof(float);
+  int64_t device_image_tensor_yz = device_image.ysize * device_image_tensor_z;
+
   if (tile >= ti.num_tiles) {
     return;
   }
+#pragma unroll
   for (int64_t h = 0; h < ti.tile_in_h; ++h) {
+#pragma unroll
     for (int64_t w = 0; w < ti.tile_in_w; ++w) {
       tile_index_t tidx = device_get_tile_index(tile, ti);
       int64_t batch = tidx.b, ww = tidx.tw, hh = tidx.th;
       // Something to be done here
       // 即：tiling size 为4*4，防止数组越界；超出范围的用0填充
       // image数组已经给出来了，似乎是无法通过一些小trick去掉分支？
-      device_packed_image_tensor[x_index * device_packed_image.ysize * device_packed_image.pitch /
-                                     sizeof(float) +
-                                 h * device_packed_image.pitch / sizeof(float) + w]
+      if (hh * 4 + h < is.h && ww * 4 + w < is.w)
+        device_packed_image_tensor[x_index * device_packed_image.ysize * device_packed_image.pitch /
+                                       sizeof(float) +
+                                   h * device_packed_image.pitch / sizeof(float) + w]
 
-          = device_image_tensor[(batch * is.ic + ic) * device_image.ysize * device_image.pitch /
-                                    sizeof(float) +
-                                (hh * 4 + h) * device_image.pitch / sizeof(float) + (ww * 4 + w)];
+            = device_image_tensor[(batch * is.ic + ic) * device_image.ysize * device_image.pitch /
+                                      sizeof(float) +
+                                  (hh * 4 + h) * device_image.pitch / sizeof(float) + (ww * 4 + w)];
+      else {
+        device_packed_image_tensor[x_index * device_packed_image.ysize * device_packed_image.pitch /
+                                       sizeof(float) +
+                                   h * device_packed_image.pitch / sizeof(float) + w]
+
+            = 0;
+      }
     }
   }
 }
@@ -225,22 +242,28 @@ void device_image_transform(float *__restrict__ image,
 
   // float *__restrict__ device_image;
   cudaPitchedPtr device_image;
-  cudaExtent extent = make_cudaExtent(sizeof(float) * ti.tiles_on_w * ti.tile_in_w,
-                                      ti.tiles_on_h * ti.tile_in_h,
-                                      is.bs * is.ic);  // 分配足够的内存，去掉image_packing中的分支
-  device_Memory_Pool.poolMalloc3D(&device_image, extent);
-  cudaMemset(device_image.ptr, 0, device_image.pitch * ti.tiles_on_h * ti.tile_in_h * is.bs * is.ic);
-  cudaExtent image_extent = make_cudaExtent(sizeof(float) * is.w, is.h, is.bs * is.ic);
-  cudaMemcpy3DParms device_image_copy_parms = {0};
-  device_image_copy_parms.srcPtr.ptr = image;
-  device_image_copy_parms.srcPtr.xsize = is.w * sizeof(float);
-  device_image_copy_parms.srcPtr.ysize = is.h;
-  device_image_copy_parms.srcPtr.pitch = is.w * sizeof(float);
-  device_image_copy_parms.dstPtr = device_image;
-  device_image_copy_parms.extent = image_extent;
-  device_image_copy_parms.kind = cudaMemcpyHostToDevice;
-  cudaMemcpy3D(&device_image_copy_parms);
-  //既然在这里需要拷贝一次内存，那应该就可以填充一些多余的0，实现padding，去掉image_packing中的分支。
+  // cudaExtent extent = make_cudaExtent(sizeof(float) * ti.tiles_on_w * ti.tile_in_w,
+  //                                     ti.tiles_on_h * ti.tile_in_h,
+  //                                     is.bs * is.ic);  // 分配足够的内存，去掉image_packing中的分支
+  // device_Memory_Pool.poolMalloc3D(&device_image, extent);
+  // cudaMemset(device_image.ptr, 0, device_image.pitch * ti.tiles_on_h * ti.tile_in_h * is.bs * is.ic);
+  // cudaExtent image_extent = make_cudaExtent(sizeof(float) * is.w, is.h, is.bs * is.ic);
+  // cudaMemcpy3DParms device_image_copy_parms = {0};
+  // device_image_copy_parms.srcPtr.ptr = image;
+  // device_image_copy_parms.srcPtr.xsize = is.w * sizeof(float);
+  // device_image_copy_parms.srcPtr.ysize = is.h;
+  // device_image_copy_parms.srcPtr.pitch = is.w * sizeof(float);
+  // device_image_copy_parms.dstPtr = device_image;
+  // device_image_copy_parms.extent = image_extent;
+  // device_image_copy_parms.kind = cudaMemcpyHostToDevice;
+  // cudaMemcpy3D(&device_image_copy_parms);
+
+  device_Memory_Pool.poolMalloc(&device_image.ptr, sizeof(float) * is.w * is.h * is.bs * is.ic);
+  device_image.pitch = sizeof(float) * is.w;
+  device_image.ysize = is.h;
+  device_image.xsize = sizeof(float) * is.w;
+  cudaMemcpy(device_image.ptr, image, sizeof(float) * is.w * is.h * is.bs * is.ic, cudaMemcpyHostToDevice);
+  // 既然在这里需要拷贝一次内存，那应该就可以填充一些多余的0，实现padding，去掉image_packing中的分支。(deprecated)
 
   // 分配packed_image内存
   cudaPitchedPtr device_packed_image;
