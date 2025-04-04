@@ -383,24 +383,46 @@ Total elapse time: 2.617447. (  857.71 GFlops)
 
 ### 使用多卡并行计算
 ```
-Layer 0 :  Elapse time 281.017621 ms. (   38.79 GFlops) 
-Layer 1 :  Elapse time 239.561319 ms. (  970.74 GFlops) 
-Layer 2 :  Elapse time 124.277989 ms. (  918.83 GFlops) 
-Layer 3 :  Elapse time 140.689691 ms. ( 1623.29 GFlops) 
-Layer 4 :  Elapse time 79.027653 ms. ( 1392.87 GFlops) 
-Layer 5 :  Elapse time 87.653955 ms. ( 2511.59 GFlops) 
-Layer 6 :  Elapse time 87.688684 ms. ( 2510.59 GFlops) 
-Layer 7 :  Elapse time 87.796688 ms. ( 2507.50 GFlops) 
-Layer 8 :  Elapse time 58.778604 ms. ( 1736.56 GFlops) 
-Layer 9 :  Elapse time 64.352989 ms. ( 3172.27 GFlops) 
-Layer 10:  Elapse time 64.392328 ms. ( 3170.33 GFlops) 
-Layer 11:  Elapse time 64.580361 ms. ( 3161.10 GFlops) 
-Layer 12:  Elapse time 9.733359 ms. ( 4467.78 GFlops) 
-Layer 13:  Elapse time 7.612626 ms. ( 5712.42 GFlops) 
-Layer 14:  Elapse time 5.792936 ms. ( 7506.82 GFlops) 
-Layer 15:  Elapse time 5.792936 ms. ( 7506.82 GFlops) 
-Total elapse time: 1.408750. ( 1593.61 GFlops) 
+Layer 0 :  Elapse time 263.965050 ms. (   41.30 GFlops) 
+Layer 1 :  Elapse time 242.462715 ms. (  959.12 GFlops) 
+Layer 2 :  Elapse time 124.992053 ms. (  913.58 GFlops) 
+Layer 3 :  Elapse time 142.429988 ms. ( 1603.45 GFlops) 
+Layer 4 :  Elapse time 80.421050 ms. ( 1368.74 GFlops) 
+Layer 5 :  Elapse time 90.396007 ms. ( 2435.40 GFlops) 
+Layer 6 :  Elapse time 97.833316 ms. ( 2250.26 GFlops) 
+Layer 7 :  Elapse time 90.494633 ms. ( 2432.75 GFlops) 
+Layer 8 :  Elapse time 60.083310 ms. ( 1698.85 GFlops) 
+Layer 9 :  Elapse time 67.023675 ms. ( 3045.87 GFlops) 
+Layer 10:  Elapse time 66.790978 ms. ( 3056.48 GFlops) 
+Layer 11:  Elapse time 67.115704 ms. ( 3041.69 GFlops) 
+Layer 12:  Elapse time 10.475318 ms. ( 4151.33 GFlops) 
+Layer 13:  Elapse time 8.117040 ms. ( 5357.44 GFlops) 
+Layer 14:  Elapse time 8.020004 ms. ( 5422.26 GFlops) 
+Layer 15:  Elapse time 7.972002 ms. ( 5454.91 GFlops) 
+Total elapse time: 1.428593. ( 1571.48 GFlops) 
 ```
 发现任务本身有非常好的并行性：每个batch间互不关联。
 
 将batch分成两半放到两个GPU上计算。由于性能瓶颈主要在于内存和显存之间的数据传输，性能提升比例接近一倍。
+
+### 优化内存拷贝方式：使用cudaMemcpy3D
+```
+Layer 0 :  Elapse time 241.651615 ms. (   45.11 GFlops) 
+Layer 1 :  Elapse time 190.811316 ms. ( 1218.75 GFlops) 
+Layer 2 :  Elapse time 78.155677 ms. ( 1461.06 GFlops) 
+Layer 3 :  Elapse time 95.108986 ms. ( 2401.24 GFlops) 
+Layer 4 :  Elapse time 38.569689 ms. ( 2853.93 GFlops) 
+Layer 5 :  Elapse time 47.470649 ms. ( 4637.62 GFlops) 
+Layer 6 :  Elapse time 47.452688 ms. ( 4639.37 GFlops) 
+Layer 7 :  Elapse time 47.467311 ms. ( 4637.94 GFlops) 
+Layer 8 :  Elapse time 19.821326 ms. ( 5149.63 GFlops) 
+Layer 9 :  Elapse time 24.678628 ms. ( 8272.14 GFlops) 
+Layer 10:  Elapse time 24.885972 ms. ( 8203.22 GFlops) 
+Layer 11:  Elapse time 24.782658 ms. ( 8237.42 GFlops) 
+Layer 12:  Elapse time 6.880681 ms. ( 6320.09 GFlops) 
+Layer 13:  Elapse time 7.110039 ms. ( 6116.22 GFlops) 
+Layer 14:  Elapse time 7.168055 ms. ( 6066.71 GFlops) 
+Layer 15:  Elapse time 7.157644 ms. ( 6075.54 GFlops) 
+Total elapse time: 0.909173. ( 2469.28 GFlops) 
+```
+发现cudaMemcpy3D复制内存实在是太慢了，使用对齐内存的收益小于复制内存的代价。所以将输入输出的内存操作换成了普通一维内存复制。
