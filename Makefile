@@ -36,7 +36,7 @@ $(BUILD_DIR)/driver.o:driver.cc | make_build_dir
 	g++ -c driver.cc $(CFLAGS) -o $(BUILD_DIR)/driver.o
 
 make_build_dir:
-	mkdir build
+	mkdir -p build
 
 .PHONY: clean
 
