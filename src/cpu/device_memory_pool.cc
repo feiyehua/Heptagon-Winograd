@@ -21,7 +21,7 @@ Device_Memory_Pool::~Device_Memory_Pool() {
 // Let pre-allocate 17GB of VRAM and assume it is sufficient
 void Device_Memory_Pool::init(int i) {
   cudaSetDevice(i);
-  cudaError_t err = cudaMalloc(&startPtr, sizeof(char) * ((size_t)1 << (size_t)34));
+  cudaError_t err = cudaMalloc(&startPtr, sizeof(char) * ((size_t)1 << (size_t)35));
   nextFree = startPtr;
 }
 
