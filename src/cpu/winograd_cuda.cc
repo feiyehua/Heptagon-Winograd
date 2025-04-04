@@ -47,33 +47,22 @@ void winograd_cuda(
 
   device_image_transform(image, is, ti, vs, &device_V_tensor, &ldv, device_Memory_Pool);
 
-  // 425ms
-  for (int64_t h = 0; h < ti.tile_in_h; ++h) {
-    for (int64_t w = 0; w < ti.tile_in_w; ++w) {
-      // 定义出U V M Tensor指针
-      typedef float(*U_tensor_t)[ti.tile_in_w][us.oc][ldu];
-      typedef float(*V_tensor_t)[ti.tile_in_w][ldv];
-      typedef float(*M_tensor_t)[ti.tile_in_w][device_M_tensor.pitch / sizeof(float)];
-      // 每次循环的时候都会定义一遍？不过估计会被编译器优化掉
-      U_tensor_t U_tensor = (U_tensor_t)device_U_tensor;
-      V_tensor_t V_tensor = (V_tensor_t)device_V_tensor;
-      M_tensor_t M_tensor = (M_tensor_t)device_M_tensor.ptr;
-      // 90ms
-      cublas_sgemm(handle,
-                   (float *)U_tensor[h][w],
-                   us.ic,
-                   (float *)V_tensor[h][w],
-                   vs.ic,
-                   (float *)M_tensor[h][w],
-                   vs.num_tiles,
-                   us.oc,
-                   vs.num_tiles,
-                   us.ic,
-                   us,
-                   vs,
-                   ti);
-    }
-  }
+  cublas_sgemm(handle,
+               device_U_tensor,
+               us.ic,
+               us.oc * ldu,
+               device_V_tensor,
+               vs.ic,
+               ldv,
+               (float*)device_M_tensor.ptr,
+               vs.num_tiles,
+               device_M_tensor.pitch / sizeof(float),
+               us.oc,
+               vs.num_tiles,
+               us.ic,
+               us,
+               vs,
+               ti);
   // 6000ms
   device_output_transform(
       device_M_tensor, device_out_tensor, out, ti, us.oc * vs.num_tiles, us, vs, os, device_Memory_Pool);

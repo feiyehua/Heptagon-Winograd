@@ -270,8 +270,8 @@ void device_image_transform(float *__restrict__ image,
   cudaExtent device_packed_image_extent = make_cudaExtent(
       sizeof(float) * ti.tile_in_w, ti.tile_in_h, ti.num_tiles * is.ic);
   device_Memory_Pool.poolMalloc3D(&device_packed_image, device_packed_image_extent);
-  image_packing<<<DIV_UP(ti.num_tiles * is.ic, 1024), 1024>>>(device_image, device_packed_image, is, ti);
-  cudaDeviceSynchronize();
+  image_packing<<<DIV_UP(ti.num_tiles * is.ic, 128), 128>>>(device_image, device_packed_image, is, ti);
+  // cudaDeviceSynchronize();
 
   //分配V_tensor内存
   cudaExtent V_tensor_extent = make_cudaExtent(
@@ -279,9 +279,9 @@ void device_image_transform(float *__restrict__ image,
   cudaPitchedPtr device_V_tensor;
   device_Memory_Pool.poolMalloc3D(&device_V_tensor, V_tensor_extent);
 
-  image_transform<<<DIV_UP(vs.num_tiles * vs.ic, 1024), 1024>>>(
+  image_transform<<<DIV_UP(vs.num_tiles * vs.ic, 128), 128>>>(
       device_packed_image, device_V_tensor, vs, ti, vs.ic * vs.num_tiles);
-  cudaDeviceSynchronize();
+  // cudaDeviceSynchronize();
 
   *V_tensor = (float *)device_V_tensor.ptr;
   *ldv = device_V_tensor.pitch / (sizeof(float));

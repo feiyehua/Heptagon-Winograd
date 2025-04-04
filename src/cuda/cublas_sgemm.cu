@@ -6,10 +6,13 @@
 void cublas_sgemm(cublasHandle_t handle,
                   float* a,
                   int lda,
+                  long long int strideA,
                   float* b,
                   int ldb,
+                  long long int strideB,
                   float* c,
                   int ldc,
+                  long long int strideC,
                   int m,
                   int n,
                   int k,
@@ -21,6 +24,22 @@ void cublas_sgemm(cublasHandle_t handle,
   cublasOperation_t transa = CUBLAS_OP_T;
   cublasOperation_t transb = CUBLAS_OP_N;
 
-  auto err = cublasSgemm(handle, transa, transb, n, m, k, &alpha, b, ldb, a, lda, &beta, c, ldc);
-  cudaDeviceSynchronize();
+  cublasSgemmStridedBatched(handle,
+                            transa,
+                            transb,
+                            n,
+                            m,
+                            k,
+                            &alpha,
+                            b,
+                            ldb,
+                            strideB,
+                            a,
+                            lda,
+                            strideA,
+                            &beta,
+                            c,
+                            ldc,
+                            strideC,
+                            ti.tile_in_h * ti.tile_in_w);
 }

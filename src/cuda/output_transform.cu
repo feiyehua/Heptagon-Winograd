@@ -165,7 +165,7 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,          // input t
   device_Memory_Pool.poolMalloc3D(&device_Y_tensor, device_Y_tensor_extent);
 
   //计算Y_tensor
-  output_transform<<<DIV_UP(us.oc * vs.num_tiles, 1024), 1024>>>(
+  output_transform<<<DIV_UP(us.oc * vs.num_tiles, 128), 128>>>(
       device_M_tensor, device_Y_tensor, ti, us.oc * vs.num_tiles);
 
   // 分配out_tensor内存
@@ -177,11 +177,11 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,          // input t
   device_Memory_Pool.poolMalloc(&device_out_tensor.ptr, sizeof(float) * os.w * os.h * os.oc * os.bs);
   // device_Memory_Pool.poolMalloc3D(&device_out_tensor, device_out_tensor_extent);
   //等待Y_tensor计算完成
-  cudaDeviceSynchronize();
+  // cudaDeviceSynchronize();
 
-  device_output_unpacking_store<<<DIV_UP(os.oc * ti.num_tiles, 1024), 1024>>>(
+  device_output_unpacking_store<<<DIV_UP(os.oc * ti.num_tiles, 128), 128>>>(
       device_Y_tensor, (float*)device_out_tensor.ptr, os, ti);
-  cudaDeviceSynchronize();
+  // cudaDeviceSynchronize();
 
   // 将Y_tensor复制回host
   // cudaMemcpy3DParms host_out_tensor_copy_parms = {0};

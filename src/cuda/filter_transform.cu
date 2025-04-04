@@ -20,7 +20,7 @@ __host__ void device_filter_transform(
       device_filter, packed_filter, sizeof(float) * collapsed_dim_size * fs.h * fs.w, cudaMemcpyHostToDevice);
   thread_filter_transform<<<us.oc, us.ic>>>(
       device_filter, device_U, device_packed_U, fs, us, collapsed_dim_size);
-  cudaDeviceSynchronize();
+  // cudaDeviceSynchronize();
   *device_U_tensor = device_packed_U;
   *ldu = us.ic;
 }
