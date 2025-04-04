@@ -19,12 +19,9 @@
 #include "utils.h"
 #include "winograd_cuda.h"
 
-#define GPU_NUM 2
 
-void device_initialize(cublasHandle_t *handle, Device_Memory_Pool &device_Memory_Pool, int num) {
-  cublasCreate(handle);
-  device_Memory_Pool.init(num);
-}
+
+
 
 // get V tensor = BT*d*B
 void image_transform(float *__restrict__ packed_image,
@@ -465,9 +462,9 @@ void winograd_convolution(
   std::chrono::system_clock::time_point start;
   std::chrono::system_clock::time_point end;
   std::chrono::milliseconds duration;
-  static Device_Memory_Pool device_Memory_Pool[GPU_NUM];
+  static Device_Memory_Pool device_Memory_Pool[NODE_NUM * GPU_NUM];
   static bool initialized = 0;
-  static cublasHandle_t handle[GPU_NUM];
+  static cublasHandle_t handle[NODE_NUM * GPU_NUM];
   static std::thread cublasHandleCreate;
   static std::thread cudaHostMallocThread;
   static float *packed_image;

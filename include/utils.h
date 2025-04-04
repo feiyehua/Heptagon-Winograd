@@ -2,6 +2,9 @@
 #include <assert.h>
 #include <stdint.h>
 
+#define GPU_NUM 2
+#define NODE_NUM 2
+
 #define MIN(A, B) (((A) < (B)) ? (A) : (B))
 #define MAX(A, B) (((A) > (B)) ? (A) : (B))
 
