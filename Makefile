@@ -1,5 +1,5 @@
 # Compiler flags
-CFLAGS = -O4 -g -std=c++11 -fopenmp -I./include -I/usr/local/cuda/include
+CFLAGS = -Ofast -g -std=c++11 -fopenmp -I./include -I/usr/local/cuda/include
 NVCCFLAGS = -O4 -g -rdc=true -Xptxas -v -std=c++11 -I./include
 
 # Directories
