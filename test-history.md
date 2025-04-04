@@ -426,3 +426,6 @@ Layer 15:  Elapse time 6.981293 ms. ( 6229.01 GFlops)
 Total elapse time: 0.886416. ( 2532.67 GFlops) 
 ```
 发现cudaMemcpy3D复制内存实在是太慢了，使用对齐内存的收益小于复制内存的代价。所以将输入输出的内存操作换成了普通一维内存复制。
+
+### 进一步优化
+考虑使用MPI进行多机并行。但是不能改`driver.cc`，遂放弃。
