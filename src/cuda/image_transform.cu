@@ -67,28 +67,51 @@ __global__ void image_packing(const cudaPitchedPtr device_image,
   }
 }
 // get V tensor = BT*d*B
-__global__ void image_transform(const cudaPitchedPtr device_packed_image,
+__global__ void image_transform(const cudaPitchedPtr device_image,
                                 const cudaPitchedPtr V,
                                 const V_shape_t vs,
                                 const tiling_info_t ti,
+                                const image_shape_t is,
                                 const int64_t collapsed_dim_size) {
-  // collapsed_dim_size = vs.ic * vs.num_tiles
-  // collapsed the tensor for better performance?
-  // should transform first, then pack
-  // typedef float(*packed_image_tensor_t)[ti.tile_in_w][collapsed_dim_size];
-  // typedef float(*V_tensor_t)[ti.tile_in_w][collapsed_dim_size];
-  // packed_image_tensor_t packed_image_tensor = (packed_image_tensor_t)packed_image;
-  // V_tensor_t V_tensor = (V_tensor_t)V;
 
-  float *packed_image_tensor = (float *)device_packed_image.ptr;
+  float *device_image_tensor = (float *)device_image.ptr;
+  float packed_image_tensor[TILE_IN_H][TILE_IN_W];
   float *V_tensor = (float *)V.ptr;
 
   int64_t idx = (blockIdx.x * blockDim.x + threadIdx.x);
   int64_t x_index = (blockIdx.x * blockDim.x + threadIdx.x);
-  if (idx >= collapsed_dim_size) return;
 
-  int64_t device_packed_image_z = device_packed_image.pitch / sizeof(float);
-  int64_t device_packed_image_yz = device_packed_image.ysize * device_packed_image_z;
+  int64_t tile = x_index / is.ic;
+  int64_t ic = x_index % is.ic;
+
+  int64_t device_image_tensor_z = device_image.pitch / sizeof(float);
+  int64_t device_image_tensor_yz = device_image.ysize * device_image_tensor_z;
+
+  if (tile >= ti.num_tiles) {
+    return;
+  }
+#pragma unroll
+  for (int64_t h = 0; h < ti.tile_in_h; ++h) {
+#pragma unroll
+    for (int64_t w = 0; w < ti.tile_in_w; ++w) {
+      tile_index_t tidx = device_get_tile_index(tile, ti);
+      int64_t batch = tidx.b, ww = tidx.tw, hh = tidx.th;
+      // Something to be done here
+      // 即：tiling size 为4*4，防止数组越界；超出范围的用0填充
+      // image数组已经给出来了，似乎是无法通过一些小trick去掉分支？
+      if (hh * 4 + h < is.h && ww * 4 + w < is.w)
+        packed_image_tensor[h][w]
+
+            = device_image_tensor[(batch * is.ic + ic) * device_image.ysize * device_image.pitch /
+                                      sizeof(float) +
+                                  (hh * 4 + h) * device_image.pitch / sizeof(float) + (ww * 4 + w)];
+      else {
+        packed_image_tensor[h][w] = 0;
+      }
+    }
+  }
+
+  if (idx >= collapsed_dim_size) return;
 
   int64_t V_tensor_yz = V.ysize * V.pitch / sizeof(float);
   int64_t V_tensor_z = V.pitch / sizeof(float);
@@ -112,11 +135,11 @@ __global__ void image_transform(const cudaPitchedPtr device_packed_image,
 // ti.tile_in_w = 6
 #pragma unroll
   for (int64_t w = 0; w < ti.tile_in_w; ++w) {
-    z6 = packed_image_tensor[x_index * device_packed_image_yz + 0 * device_packed_image_z + w];
+    z6 = packed_image_tensor[0][w];
 
     z0 = 4.0f * z6;
 
-    z6 = packed_image_tensor[x_index * device_packed_image_yz + 1 * device_packed_image_z + w];
+    z6 = packed_image_tensor[1][w];
 
     z1 = -4.0f * z6;
     z2 = 4.0f * z6;
@@ -124,7 +147,7 @@ __global__ void image_transform(const cudaPitchedPtr device_packed_image,
     z4 = 2.0f * z6;
     z5 = 4.0f * z6;
 
-    z6 = packed_image_tensor[x_index * device_packed_image_yz + 2 * device_packed_image_z + w];
+    z6 = packed_image_tensor[2][w];
 
     z0 += -5.0f * z6;
     z1 += -4.0f * z6;
@@ -132,7 +155,7 @@ __global__ void image_transform(const cudaPitchedPtr device_packed_image,
     z3 += -z6;
     z4 += -z6;
 
-    z6 = packed_image_tensor[x_index * device_packed_image_yz + 3 * device_packed_image_z + w];
+    z6 = packed_image_tensor[3][w];
 
     z1 += z6;
     z2 += -z6;
@@ -140,7 +163,7 @@ __global__ void image_transform(const cudaPitchedPtr device_packed_image,
     z4 += -2.0f * z6;
     z5 += -5.0f * z6;
 
-    z6 = packed_image_tensor[x_index * device_packed_image_yz + 4 * device_packed_image_z + w];
+    z6 = packed_image_tensor[4][w];
 
     z0 += z6;
     z1 += z6;
@@ -148,7 +171,7 @@ __global__ void image_transform(const cudaPitchedPtr device_packed_image,
     z3 += z6;
     z4 += z6;
 
-    z6 = packed_image_tensor[x_index * device_packed_image_yz + 5 * device_packed_image_z + w];
+    z6 = packed_image_tensor[5][w];
 
     z5 += z6;
 
@@ -219,7 +242,6 @@ void device_image_transform(float *__restrict__ image,
                             float **V_tensor,
                             int *ldv,
                             Device_Memory_Pool &device_Memory_Pool) {
-
   cudaPitchedPtr device_image;
 
   device_Memory_Pool.poolMalloc(&device_image.ptr, sizeof(float) * is.w * is.h * is.bs * is.ic);
@@ -229,13 +251,6 @@ void device_image_transform(float *__restrict__ image,
   cudaMemcpy(device_image.ptr, image, sizeof(float) * is.w * is.h * is.bs * is.ic, cudaMemcpyHostToDevice);
   // 既然在这里需要拷贝一次内存，那应该就可以填充一些多余的0，实现padding，去掉image_packing中的分支。(deprecated)
 
-  // 分配packed_image内存
-  cudaPitchedPtr device_packed_image;
-  cudaExtent device_packed_image_extent = make_cudaExtent(
-      sizeof(float) * ti.tile_in_w, ti.tile_in_h, ti.num_tiles * is.ic);
-  device_Memory_Pool.poolMalloc3D(&device_packed_image, device_packed_image_extent);
-  image_packing<<<DIV_UP(ti.num_tiles * is.ic, 128), 128>>>(device_image, device_packed_image, is, ti);
-
   //分配V_tensor内存
   cudaExtent V_tensor_extent = make_cudaExtent(
       sizeof(float) * vs.ic * vs.num_tiles, ti.tile_in_w, ti.tile_in_h);
@@ -243,7 +258,7 @@ void device_image_transform(float *__restrict__ image,
   device_Memory_Pool.poolMalloc3D(&device_V_tensor, V_tensor_extent);
 
   image_transform<<<DIV_UP(vs.num_tiles * vs.ic, 128), 128>>>(
-      device_packed_image, device_V_tensor, vs, ti, vs.ic * vs.num_tiles);
+      device_image, device_V_tensor, vs, ti,is, vs.ic * vs.num_tiles);
 
   *V_tensor = (float *)device_V_tensor.ptr;
   *ldv = device_V_tensor.pitch / (sizeof(float));
