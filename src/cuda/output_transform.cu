@@ -10,18 +10,19 @@ __device__ inline tile_index_t device_get_tile_index(int64_t tile, tiling_info_t
 }
 
 __global__ void output_transform(cudaPitchedPtr M,  // input tensor
-                                 cudaPitchedPtr Y,  // output tensor
+                                 float* __restrict__ device_out_tensor,
                                  const tiling_info_t ti,
+                                 const out_shape_t os,
                                  const int64_t collapsed_dim_size) {
   float* M_tensor = (float*)M.ptr;
-  float* Y_tensor = (float*)Y.ptr;
+  // float* Y_tensor = (float*)Y.ptr;
   float z0, z1, z2, z3, z4;
   int64_t idx = (blockIdx.x * blockDim.x + threadIdx.x);
   int64_t M_tensor_z = M.pitch / sizeof(float);
   int64_t M_tensor_yz = M_tensor_z * M.ysize;
 
-  int64_t Y_tensor_z = Y.pitch / sizeof(float);
-  int64_t Y_tensor_yz = Y.ysize * Y_tensor_z;
+  // int64_t Y_tensor_z = Y.pitch / sizeof(float);
+  // int64_t Y_tensor_yz = Y.ysize * Y_tensor_z;
 
   if (idx >= collapsed_dim_size) {
     return;
@@ -36,6 +37,7 @@ __global__ void output_transform(cudaPitchedPtr M,  // input tensor
   ⎢                  ⎥
   ⎣0  1  -1  8  -8  1⎦
   */
+  float tmp_Y_tensor[4][6]={0};
 #pragma unroll
   for (int64_t w = 0; w < ti.tile_in_w; ++w) {
     z4 = M_tensor[0 * M_tensor_yz + w * M_tensor_z + idx];
@@ -68,49 +70,74 @@ __global__ void output_transform(cudaPitchedPtr M,  // input tensor
     z4 = M_tensor[5 * M_tensor_yz + w * M_tensor_z + idx];
     z3 += z4;
 
-    Y_tensor[0 * Y_tensor_z + w + idx * Y_tensor_yz] = z0;
-    Y_tensor[1 * Y_tensor_z + w + idx * Y_tensor_yz] = z1;
-    Y_tensor[2 * Y_tensor_z + w + idx * Y_tensor_yz] = z2;
-    Y_tensor[3 * Y_tensor_z + w + idx * Y_tensor_yz] = z3;
+    tmp_Y_tensor[0][w] = z0;
+    tmp_Y_tensor[1][w] = z1;
+    tmp_Y_tensor[2][w] = z2;
+    tmp_Y_tensor[3][w] = z3;
+    // Y_tensor[0 * Y_tensor_z + w + idx * Y_tensor_yz] = z0;
+    // Y_tensor[1 * Y_tensor_z + w + idx * Y_tensor_yz] = z1;
+    // Y_tensor[2 * Y_tensor_z + w + idx * Y_tensor_yz] = z2;
+    // Y_tensor[3 * Y_tensor_z + w + idx * Y_tensor_yz] = z3;
   }
 #pragma unroll
   for (int64_t h = 0; h < ti.tile_out_h; ++h) {
-    z4 = Y_tensor[h * Y_tensor_z + 0 + idx * Y_tensor_yz];
+    z4 = tmp_Y_tensor[h][0];
 
     z0 = z4;
 
-    z4 = Y_tensor[h * Y_tensor_z + 1 + idx * Y_tensor_yz];
+    z4 = tmp_Y_tensor[h][1];
     z0 += z4;
     z1 = z4;
     z2 = z4;
     z3 = z4;
 
-    z4 = Y_tensor[h * Y_tensor_z + 2 + idx * Y_tensor_yz];
+    z4 = tmp_Y_tensor[h][2];
     z0 += z4;
     z1 += -z4;
     z2 += z4;
     z3 += -z4;
 
-    z4 = Y_tensor[h * Y_tensor_z + 3 + idx * Y_tensor_yz];
+    z4 = tmp_Y_tensor[h][3];
     z0 += z4;
     z1 += 2.0f * z4;
     z2 += 4.0f * z4;
     z3 += 8.0f * z4;
 
-    z4 = Y_tensor[h * Y_tensor_z + 4 + idx * Y_tensor_yz];
+    z4 = tmp_Y_tensor[h][4];
     z0 += z4;
     z1 += -2.0f * z4;
     z2 += 4.0f * z4;
     z3 += -8.0f * z4;
 
-    z4 = Y_tensor[h * Y_tensor_z + 5 + idx * Y_tensor_yz];
+    z4 = tmp_Y_tensor[h][5];
 
     z3 += z4;
 
-    Y_tensor[h * Y_tensor_z + 0 + idx * Y_tensor_yz] = z0;
-    Y_tensor[h * Y_tensor_z + 1 + idx * Y_tensor_yz] = z1;
-    Y_tensor[h * Y_tensor_z + 2 + idx * Y_tensor_yz] = z2;
-    Y_tensor[h * Y_tensor_z + 3 + idx * Y_tensor_yz] = z3;
+    tmp_Y_tensor[h][0] = z0;
+    tmp_Y_tensor[h][1] = z1;
+    tmp_Y_tensor[h][2] = z2;
+    tmp_Y_tensor[h][3] = z3;
+  }
+
+  int64_t out_tensor_z = os.w;  // device_out_tensor.pitch / sizeof(float);
+  int64_t out_tensor_yz = os.h * out_tensor_z;
+  float* out_tensor = (float*)device_out_tensor;
+
+  int64_t oc = idx / ti.num_tiles;
+  int64_t tile = idx % ti.num_tiles;
+  tile_index_t tidx = device_get_tile_index(tile, ti);
+  int64_t batch = tidx.b, ww = tidx.tw, hh = tidx.th;
+  if (batch >= os.bs) return;
+#pragma unroll
+  for (int64_t h = 0; h < min(ti.tile_out_h, os.h - 4 * hh); ++h) {
+#pragma unroll
+    for (int64_t w = 0; w < min(ti.tile_out_w, os.h - 4 * ww); ++w) {
+      {
+        if (hh * 4 + h < os.h && ww * 4 + w < os.w)
+          out_tensor[(batch * os.oc + oc) * out_tensor_yz + (hh * 4 + h) * out_tensor_z +
+                     (ww * 4 + w)] = tmp_Y_tensor[h][w];
+      }
+    }
   }
 }
 
@@ -156,17 +183,6 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,          // input t
                              const V_shape_t vs,
                              const out_shape_t os,
                              Device_Memory_Pool& device_Memory_Pool) {
-  // 分配Y_tensor内存
-  cudaPitchedPtr device_Y_tensor;
-  cudaExtent device_Y_tensor_extent = make_cudaExtent(
-      sizeof(float) * ti.tile_in_w, ti.tile_in_h, us.oc * vs.num_tiles);
-
-  device_Memory_Pool.poolMalloc3D(&device_Y_tensor, device_Y_tensor_extent);
-
-  //计算Y_tensor
-  output_transform<<<DIV_UP(us.oc * vs.num_tiles, 128), 128>>>(
-      device_M_tensor, device_Y_tensor, ti, us.oc * vs.num_tiles);
-
   // 分配out_tensor内存
   cudaPitchedPtr device_out_tensor;
   cudaExtent device_out_tensor_extent = make_cudaExtent(sizeof(float) * os.w, os.h, os.oc * os.bs);
@@ -175,8 +191,9 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,          // input t
   device_out_tensor.ysize = os.h;
   device_Memory_Pool.poolMalloc(&device_out_tensor.ptr, sizeof(float) * os.w * os.h * os.oc * os.bs);
 
-  device_output_unpacking_store<<<DIV_UP(os.oc * ti.num_tiles, 128), 128>>>(
-      device_Y_tensor, (float*)device_out_tensor.ptr, os, ti);
+  //计算out_tensor
+  output_transform<<<DIV_UP(us.oc * vs.num_tiles, 128), 128>>>(
+      device_M_tensor, (float*)device_out_tensor.ptr, ti, os, us.oc * vs.num_tiles);
 
   cudaMemcpy(out, device_out_tensor.ptr, sizeof(float) * os.w * os.h * os.oc * os.bs, cudaMemcpyDeviceToHost);
 }

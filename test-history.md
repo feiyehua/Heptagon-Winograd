@@ -427,7 +427,7 @@ Total elapse time: 0.886416. ( 2532.67 GFlops)
 ```
 发现cudaMemcpy3D复制内存实在是太慢了，使用对齐内存的收益小于复制内存的代价。所以将输入输出的内存操作换成了普通一维内存复制。
 
-### 使用gcc ofast编译选项
+### 使用gcc ofast编译选项(deprecated)
 ?potentially fatster
 ```
 Layer 0 :  Elapse time 218.646606 ms. (   49.86 GFlops) 
@@ -447,6 +447,27 @@ Layer 13:  Elapse time 6.523609 ms. ( 6666.03 GFlops)
 Layer 14:  Elapse time 4.811287 ms. ( 9038.44 GFlops) 
 Layer 15:  Elapse time 4.800320 ms. ( 9059.09 GFlops) 
 Total elapse time: 0.882738. ( 2543.23 GFlops) 
+```
+
+### 合并output_transform函数
+```
+Layer 0 :  Elapse time 212.748686 ms. (   51.24 GFlops) 
+Layer 1 :  Elapse time 183.533986 ms. ( 1267.07 GFlops) 
+Layer 2 :  Elapse time 73.375305 ms. ( 1556.24 GFlops) 
+Layer 3 :  Elapse time 90.285937 ms. ( 2529.52 GFlops) 
+Layer 4 :  Elapse time 36.099672 ms. ( 3049.21 GFlops) 
+Layer 5 :  Elapse time 46.532710 ms. ( 4731.09 GFlops) 
+Layer 6 :  Elapse time 45.066675 ms. ( 4885.00 GFlops) 
+Layer 7 :  Elapse time 45.095682 ms. ( 4881.86 GFlops) 
+Layer 8 :  Elapse time 17.872016 ms. ( 5711.31 GFlops) 
+Layer 9 :  Elapse time 23.170392 ms. ( 8810.60 GFlops) 
+Layer 10:  Elapse time 23.216327 ms. ( 8793.17 GFlops) 
+Layer 11:  Elapse time 23.267666 ms. ( 8773.77 GFlops) 
+Layer 12:  Elapse time 6.084601 ms. ( 7146.98 GFlops) 
+Layer 13:  Elapse time 5.991379 ms. ( 7258.19 GFlops) 
+Layer 14:  Elapse time 5.950371 ms. ( 7308.21 GFlops) 
+Layer 15:  Elapse time 5.924304 ms. ( 7340.36 GFlops) 
+Total elapse time: 0.844216. ( 2659.28 GFlops) 
 ```
 
 ### 进一步优化

@@ -7,8 +7,9 @@
 #include "device_memory_pool.h"
 #include "utils.h"
 __global__ void output_transform(cudaPitchedPtr M,  // input tensor
-                                 cudaPitchedPtr Y,  // output tensor
+                                 float* __restrict__ device_out_tensor,
                                  const tiling_info_t ti,
+                                 const out_shape_t os,
                                  const int64_t collapsed_dim_size);
 
 void device_output_transform(cudaPitchedPtr device_M_tensor,  // input tensor
@@ -19,5 +20,5 @@ void device_output_transform(cudaPitchedPtr device_M_tensor,  // input tensor
                              const U_shape_t us,
                              const V_shape_t vs,
                              const out_shape_t os,
-                            Device_Memory_Pool& device_Memory_Pool);
+                             Device_Memory_Pool& device_Memory_Pool);
 #endif
