@@ -13,7 +13,6 @@ __host__ void device_filter_transform(float *__restrict__ packed_filter,
                                       int *ldu,
                                       Device_Memory_Pool& device_Memory_Pool);
 __global__ void thread_filter_transform(float *__restrict__ packed_filter,
-                                        float *__restrict__ U,
                                         float *__restrict__ packed_U,
                                         const filter_shape_t fs,
                                         const U_shape_t us,
