@@ -23,17 +23,20 @@ CUDA_OBJECTS := $(patsubst src/cuda/%.cu, $(BUILD_DIR)/%.o, $(CUDA_SOURCES))
 # Targets
 all: winograd
 
-winograd: $(CUDA_OBJECTS) $(CPU_OBJECTS) $(BUILD_DIR)/driver.o
+winograd: $(CUDA_OBJECTS) $(CPU_OBJECTS) $(BUILD_DIR)/driver.o | make_build_dir
 	nvcc -o $@ $^ -Xptxas -v -Xcompiler -fopenmp -lcublas
 
-$(BUILD_DIR)/%.o: $(SRC_CUDA)/%.cu
+$(BUILD_DIR)/%.o: $(SRC_CUDA)/%.cu | make_build_dir
 	nvcc -c $< $(NVCCFLAGS) -o $@
 
-$(BUILD_DIR)/%.o: $(SRC_CPU)/%.cc
+$(BUILD_DIR)/%.o: $(SRC_CPU)/%.cc | make_build_dir
 	g++ -c $< $(CFLAGS) -o $@
 
-$(BUILD_DIR)/driver.o:driver.cc
+$(BUILD_DIR)/driver.o:driver.cc | make_build_dir
 	g++ -c driver.cc $(CFLAGS) -o $(BUILD_DIR)/driver.o
+
+make_build_dir:
+	mkdir build
 
 .PHONY: clean
 
