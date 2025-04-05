@@ -16,13 +16,12 @@ __host__ void device_filter_transform(
   device_Memory_Pool.poolMalloc((void **)&device_packed_U, sizeof(float) * collapsed_dim_size * us.h * us.w);
   cudaMemcpy(
       device_filter, packed_filter, sizeof(float) * collapsed_dim_size * fs.h * fs.w, cudaMemcpyHostToDevice);
-  thread_filter_transform<<<us.oc, us.ic>>>(
+  thread_filter_transform<<<DIV_UP(us.oc * us.ic, 128), 128>>>(
       device_filter, device_packed_U, fs, us, collapsed_dim_size);
 
   *device_U_tensor = device_packed_U;
   *ldu = us.ic;
 }
-
 
 __global__ void thread_filter_transform(float *__restrict__ packed_filter,
                                         // float *__restrict__ U,
@@ -53,7 +52,11 @@ G =
 */
   // for (int64_t idx = 0; idx < collapsed_dim_size; idx++) {
   int64_t idx = blockIdx.x * blockDim.x + threadIdx.x;
-// parallel computation for each id
+  if(idx>=us.oc*us.ic)
+  {
+    return;
+  }
+  // parallel computation for each id
   float U[TILE_IN_H][TILE_IN_W];
 #pragma unroll
   // fs.w=3
@@ -90,6 +93,8 @@ G =
     U[4][w] = z4;
     U[5][w] = z5;
   }
+  int64_t oc = idx / us.ic;
+  ino64_t ic = idx % us.ic;
 #pragma unroll
   // us.h=6
   for (int64_t h = 0; h < us.h; ++h) {
@@ -116,12 +121,12 @@ G =
     z4 += (1.0f / 6.0f) * z6;
     z5 = z6;
 
-    packed_U[h * us.w * collapsed_dim_size + 0 * collapsed_dim_size + blockIdx.x * us.ic + threadIdx.x] = z0;
-    packed_U[h * us.w * collapsed_dim_size + 1 * collapsed_dim_size + blockIdx.x * us.ic + threadIdx.x] = z1;
-    packed_U[h * us.w * collapsed_dim_size + 2 * collapsed_dim_size + blockIdx.x * us.ic + threadIdx.x] = z2;
-    packed_U[h * us.w * collapsed_dim_size + 3 * collapsed_dim_size + blockIdx.x * us.ic + threadIdx.x] = z3;
-    packed_U[h * us.w * collapsed_dim_size + 4 * collapsed_dim_size + blockIdx.x * us.ic + threadIdx.x] = z4;
-    packed_U[h * us.w * collapsed_dim_size + 5 * collapsed_dim_size + blockIdx.x * us.ic + threadIdx.x] = z5;
+    packed_U[h * us.w * collapsed_dim_size + 0 * collapsed_dim_size + oc * us.ic + ic] = z0;
+    packed_U[h * us.w * collapsed_dim_size + 1 * collapsed_dim_size + oc * us.ic + ic] = z1;
+    packed_U[h * us.w * collapsed_dim_size + 2 * collapsed_dim_size + oc * us.ic + ic] = z2;
+    packed_U[h * us.w * collapsed_dim_size + 3 * collapsed_dim_size + oc * us.ic + ic] = z3;
+    packed_U[h * us.w * collapsed_dim_size + 4 * collapsed_dim_size + oc * us.ic + ic] = z4;
+    packed_U[h * us.w * collapsed_dim_size + 5 * collapsed_dim_size + oc * us.ic + ic] = z5;
   }
   // }
 }

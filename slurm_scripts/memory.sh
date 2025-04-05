@@ -13,4 +13,4 @@
 # export OMP_NUN_THREADS=64
 # Note: numactl - Control NUMA policy for processes or shared memory, see `man numactl'.`
 # Note: perf-stat - Run a command and gather performance counter statistics, see `man perf stat'.
-numactl --cpunodebind=0-3 --membind=0-3 perf stat -ddd compute-sanitizer ./winograd conf/vgg16.conf 1
+numactl --cpunodebind=0-3 --membind=0-3 perf stat -ddd compute-sanitizer ./winograd conf/resnet50.conf 1
